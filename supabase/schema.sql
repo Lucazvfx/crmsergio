@@ -11,7 +11,7 @@ create table public.registros (
   updated_at bigint not null,
   server_at  timestamptz not null default clock_timestamp(),
   primary key (user_id, tipo, id),
-  constraint registros_tipo_check check (tipo in ('clientes','vendas','visitas','agenda','produtos'))
+  constraint registros_tipo_check check (tipo in ('clientes','vendas','visitas','agenda','produtos','pedidos'))
 );
 create index registros_user_server_at on public.registros (user_id, server_at);
 create or replace function public.registros_lww() returns trigger language plpgsql set search_path = '' as $$

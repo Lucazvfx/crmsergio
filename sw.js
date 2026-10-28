@@ -1,7 +1,7 @@
 /* Service worker do CRM do Sérgio
    - Guarda o app no aparelho para abrir sem internet
    - Recebe as notificações enviadas pelo Supabase (lembretes e resumo do dia) */
-const VERSAO = '5fa698ee1b';
+const VERSAO = '7cfd2a3385';
 const CACHE = 'crm-sergio-' + VERSAO;
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/badge-96.png'];
 
