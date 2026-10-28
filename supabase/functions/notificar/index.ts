@@ -56,6 +56,24 @@ Deno.serve(async (req) => {
   if (e1) return json({ erro: e1.message }, 500);
   if (!subs?.length) return json({ inscricoes: 0, enviadas: 0 });
 
+  // Modo teste (só com o segredo do agendador): envia agora para todos os aparelhos inscritos
+  if (body?.teste) {
+    const r: { aparelho: string; status: number | string }[] = [];
+    for (const s of subs) {
+      try {
+        const res = await webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify({ title: "CRM DO SÉRGIO — teste", body: "Notificações funcionando neste aparelho. ✅", tag: "teste-servidor", url: "./?tab=agenda" }),
+          { TTL: 600, urgency: "high" },
+        );
+        r.push({ aparelho: new URL(s.endpoint).host, status: res.statusCode });
+      } catch (err) {
+        r.push({ aparelho: new URL(s.endpoint).host, status: `${(err as { statusCode?: number }).statusCode ?? ""} ${(err as Error).message}`.trim() });
+      }
+    }
+    return json({ teste: true, resultados: r });
+  }
+
   const users = [...new Set(subs.map((s) => s.user_id))];
   const { data: agenda, error: e2 } = await sb.from("registros").select("user_id,id,dados")
     .eq("tipo", "agenda").eq("deleted", false).in("user_id", users);
@@ -113,6 +131,7 @@ Deno.serve(async (req) => {
 
   let enviadas = 0; const erros: string[] = []; const removidas: string[] = [];
   for (const p of planos) {
+    if (removidas.includes(p.sub.endpoint.slice(0, 40))) continue; // inscrição já removida nesta rodada
     if (p.titulo) {
       try {
         await webpush.sendNotification(
