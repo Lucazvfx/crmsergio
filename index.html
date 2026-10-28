@@ -125,7 +125,10 @@
       <form id="formVenda" class="space-y-3" autocomplete="off">
         <div><label class="label">Cliente *</label><select name="clienteId" data-cli class="input" required></select></div>
         <div><label class="label">Data *</label><input type="date" name="data" class="input" required></div>
-        <div><label class="label">Produto *</label><input name="produto" list="listaProdutos" class="input" placeholder="Ex.: Sal mineral 30kg" required><datalist id="listaProdutos"></datalist></div>
+        <div><label class="label">Produto *</label>
+          <select name="produtoSel" class="input" required></select>
+          <input name="produto" class="input mt-2 hidden" placeholder="Digite o nome do produto" autocomplete="off">
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="label">Quantidade *</label><input type="number" name="qtd" min="0.01" step="0.01" class="input" placeholder="0" required></div>
           <div><label class="label">Valor unitário (R$) *</label><input type="number" name="valorUnit" min="0" step="0.01" class="input" placeholder="0,00" required></div>
@@ -317,6 +320,104 @@ function maskPhone(v) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 const waLink = tel => { const d = (tel || '').replace(/\D/g, ''); return d.length >= 10 ? `https://wa.me/${d.length <= 11 ? '55' + d : d}` : null; };
+
+/* ---------- Catálogo de produtos (lista pré-carregada na venda) ---------- */
+const CATALOGO = [
+  ["AEROCID T SPRAY X 200ML C 12", "a", "vermelho"],
+  ["AEROCID T SPRAY X 500ML C 12", "a", "vermelho"],
+  ["AGEBENDAZOL INJ 15 X 1000ML", "a", ""],
+  ["AGEBENDAZOL SUS INJ 15 X 500ML", "a", ""],
+  ["AGECOX NEO X 100ML", "a", ""],
+  ["AGECOX NEO SUSPENSAO ORAL X 1L", "a", ""],
+  ["AGEMOXI INJ F A X 100ML", "a", "vermelho"],
+  ["AGEMOXI INJ F A X 50ML", "a", "vermelho"],
+  ["AGESPIRIN PO X5000G", "a", ""],
+  ["AGESPIRIN SACHE 100G X 12", "a", ""],
+  ["ALIV V INJ 50ML X 1", "a", ""],
+  ["ANALGEX V INJ FA X 50ML", "a", ""],
+  ["ANIMAX DUO INJ 1000ML X 1", "a", "vermelho"],
+  ["ANIMAX DUO INJ 500ML X 1", "a", "vermelho"],
+  ["ANIMAX GEL DISP C 24 SERINGAS", "a", "vermelho"],
+  ["BIOVIT SOL INJ X 500ML", "a", ""],
+  ["BOIFLIN X 200G", "a", "vermelho"],
+  ["BUSCOFIN INJETAVEL 50ML X 1", "a", ""],
+  ["CALMIUN 2 INJ 10 ML IN35 2017", "a", ""],
+  ["CEF 50MG ML SUS INJ 100ML X 1", "a", ""],
+  ["CEF 50MG/ML SUS INJ 30ML", "a", ""],
+  ["CIPERTROIDE POUR ON 2000ML X 6", "a", "vermelho"],
+  ["CIPERTROIDE POUR ON 20L", "d", "vermelho"],
+  ["DECAPLUS SOL CONC 2 5 0 2", "a", "vermelho"],
+  ["COMBATT3 POUR ON X 1L", "a", "vermelho"],
+  ["COMBATT3 POUR ON X 5L", "a", "vermelho"],
+  ["APLICADOR POUR ON", "a", "vermelho"],
+  ["DECATHRINE SUS CONC 2 5 30ML", "a", "vermelho"],
+  ["DEXTAR 2MG.ML INJ 10ML", "a", ""],
+  ["DEXTAR 2MG.ML INJ 50ML", "a", ""],
+  ["DIURAX 50MG.ML INJ X 5ML", "d", ""],
+  ["DORAX 1 INJETAVEL 1L", "a", "vermelho"],
+  ["DORAX 1 INJETAVEL 500ML", "a", "vermelho"],
+  ["DORAX INJ X 50ML C 18 FR", "a", "vermelho"],
+  ["DORAX PLUS PASTA CT", "a", "vermelho"],
+  ["DORMIUN V INJ X 5 ML IN35 2017", "a", ""],
+  ["ECTOCID PULVERIZACAO X 1L", "a", "laranja"],
+  ["EPMOX SOL INJ X 1L", "a", "vermelho"],
+  ["EPMOX SOL INJ X 500ML", "a", "vermelho"],
+  ["FENZOL PASTA 20G DISP X 24 SER", "a", "vermelho"],
+  ["FORTGAL PLUS INJ X 50ML", "a", "vermelho"],
+  ["FORTGAL SOL INJ X 50ML", "a", ""],
+  ["FORTGAL SOL INJ X 100ML", "a", ""],
+  ["GENTAMASTI L DISP COM 12 SER DE 10G", "a", ""],
+  ["GENTAMASTI S DISP COM 12 SER DE 10G", "a", ""],
+  ["IZOOT B12 INJ X 15ML", "a", ""],
+  ["IZOOT B12 INJETAVEL X 50ML", "a", ""],
+  ["KETOJET 100MG ML INJ X 50ML FA", "a", ""],
+  ["KETOJET GEL 10G DISP X 8 SE", "d", ""],
+  ["MECTIMAX 3 15 GOLD INJX500ML", "a", "vermelho"],
+  ["MECTIMAX 3 15 GOLD INJX1000ML", "a", "vermelho"],
+  ["MECTIMAX DUO INJ X 1000ML", "a", "vermelho"],
+  ["MECTIMAX DUO INJ X 500ML", "a", "vermelho"],
+  ["MECTIMAX PLUS PASTA CT", "a", "vermelho"],
+  ["MECTIMAX PLUS PASTA DISP", "d", "vermelho"],
+  ["MEGACILIN PPU INJ 25ML", "a", ""],
+  ["MEGACILIN PPU INJ X 100 ML", "a", ""],
+  ["MEGACILIN SUPER PLUS INJETAVEL", "a", ""],
+  ["MOD PLUS SOL INJ X 1000ML", "a", "laranja"],
+  ["MOD PLUS SOL INJ X 500ML", "a", "laranja"],
+  ["PLACENTEX INJ X 100ML", "a", ""],
+  ["PLACENTEX INJ X 50ML", "a", ""],
+  ["POTENFORT B12 ORAL X 1000ML IN35 2017", "a", "laranja"],
+  ["POTENFORT B12 ORAL X 120", "d", "laranja"],
+  ["POTENFORT INJ X 10ML IN35", "d", "laranja"],
+  ["REVIPLUS X 50ML", "a", "laranja"],
+  ["ROFLIN 100MG.ML SOL ORAL X 1L", "a", ""],
+  ["ROFLIN 300MG/ML INJ X50ML", "a", ""],
+  ["ROFLIN INJ X 100ML", "a", ""],
+  ["TERRACAM PLUS INJ 50ML", "a", ""],
+  ["TERRACAM SPRAY 125ML DISP C 12", "a", "vermelho"],
+  ["THION C SOL TOP X FR 1L", "a", "vermelho"],
+  ["UBERLAC SUS INTRAMAMARIA X10ML", "a", "laranja"],
+  ["UBERSEAL 4G BALDE X 120 S", "d", "vermelho"],
+  ["UBERSEAL 4G DISPLAY X 20", "d", "vermelho"],
+  ["UBERSEC SUS INTRAM X10ML DIS12", "a", ""],
+  ["ZELOTRIL 10 AGENER X 500ML", "a", "vermelho"],
+  ["ZELOTRIL 10 X 50ML INJ F A", "a", "vermelho"],
+  ["ZELOTRIL PLUS INJ X 100ML", "a", "vermelho"],
+  ["ZELOTRIL PLUS INJ X 50ML", "a", "vermelho"],
+  ["APLICADOR DE PRIMER", "a", ""],
+  ["APLICADOR DE PRIMER PR", "a", ""],
+  ["APLICADOR PRIMER PR NOVILHAS", "a", ""],
+  ["CIPIOTEC INJ X 60ML", "a", ""],
+  ["ESTRON INJ X 60ML", "a", ""],
+  ["ESTRON 20ML INJ", "a", ""],
+  ["PRIMER COM 10 DISPOSITIVOS", "a", ""],
+  ["PRIMER MONODOSE COM 10 DISPOSITIVOS", "a", ""],
+  ["PRIMER PR COM 25 DISPOSITIVOS", "a", ""],
+  ["PROGECIO 70MG.ML SOL INJ X 100ML", "a", ""],
+  ["RIC BE INJ 50ML", "a", ""],
+  ["RIC BE INJ X100ML", "a", ""],
+  ["TEC-RELIN 0.025MG ML SOL.INJ X 20 ML", "a", ""],
+  ["GONASER COM 10 UNIDADES", "a", ""]
+]; // [nome, a=ativo/d=descontinuado, marcação da planilha original]
 
 /* =====================================================================
    Persistência local (por usuário) + sincronização com o Supabase
@@ -798,7 +899,7 @@ function renderVendas() {
       <td class="td">${fmtDate(S.last[c.id])}</td>
     </tr>`).join('') : `<tr><td colspan="7" class="p-8 text-center text-sm text-slate-400">Sem dados ainda.</td></tr>`;
 
-  $('#listaProdutos').innerHTML = [...new Set(db.vendas.map(v => v.produto))].sort().map(p => `<option value="${esc(p)}">`).join('');
+  fillProdutoSelect();
 }
 
 /* ---------- Render: Visitas ---------- */
@@ -877,6 +978,19 @@ function fillSelects() {
   [['#vendaFiltro', 'Todos os clientes'], ['#visFiltroCli', 'Todos os clientes']].forEach(([sel, ph]) => {
     const s = $(sel), v = s.value; s.innerHTML = clienteOptions(v, ph); s.value = cliById(v) ? v : '';
   });
+}
+const OUTRO = '__outro__';
+function fillProdutoSelect() {
+  const sel = $('#formVenda').produtoSel, cur = sel.value;
+  const cat = CATALOGO.filter(c => c[1] !== 'd').map(c => c[0]).sort((a, b) => a.localeCompare(b));
+  const inCat = new Set(cat.map(n => n.toLowerCase()));
+  const outros = [...new Set(db.vendas.map(v => v.produto))].filter(n => !inCat.has(n.toLowerCase())).sort((a, b) => a.localeCompare(b));
+  const opt = n => `<option value="${esc(n)}">${esc(n)}</option>`;
+  sel.innerHTML = `<option value="">Selecione o produto...</option>`
+    + `<optgroup label="Catálogo (${cat.length})">${cat.map(opt).join('')}</optgroup>`
+    + (outros.length ? `<optgroup label="Outros já vendidos">${outros.map(opt).join('')}</optgroup>` : '')
+    + `<option value="${OUTRO}">+ Outro produto (digitar)</option>`;
+  sel.value = [...sel.options].some(o => o.value === cur) ? cur : '';
 }
 function renderAll() {
   computeStats();
@@ -1106,7 +1220,7 @@ function bindEvents() {
       case 'novaVendaCli':
         closeModal(); showTab('vendas');
         $('#formVenda').clienteId.value = id; $('#vendaFiltro').value = id; renderVendas();
-        $('#formVenda').produto.focus(); break;
+        $('#formVenda').produtoSel.focus(); break;
       case 'weekPrev': weekStart = addDays(weekStart, -7); renderAgenda(); break;
       case 'weekNext': weekStart = addDays(weekStart, 7); renderAgenda(); break;
       case 'weekToday': weekStart = mondayOf(new Date()); renderAgenda(); break;
@@ -1143,9 +1257,14 @@ function bindEvents() {
   fv.data.value = todayISO();
   const calcTotal = () => { $('#vendaTotal').textContent = fmtBRL((parseFloat(fv.qtd.value) || 0) * (parseFloat(fv.valorUnit.value) || 0)); };
   fv.qtd.addEventListener('input', calcTotal); fv.valorUnit.addEventListener('input', calcTotal);
-  fv.produto.addEventListener('change', () => { // sugere último preço praticado do produto
+  const nomeProduto = () => fv.produtoSel.value === OUTRO ? fv.produto.value.trim() : fv.produtoSel.value;
+  fv.produtoSel.addEventListener('change', () => {
+    const outro = fv.produtoSel.value === OUTRO;
+    fv.produto.classList.toggle('hidden', !outro); fv.produto.required = outro;
+    if (outro) { fv.produto.value = ''; fv.produto.focus(); return; }
+    // sugere o último preço praticado deste produto
     if (fv.valorUnit.value) return;
-    const last = db.vendas.filter(v => v.produto === fv.produto.value).sort((a, b) => b.data.localeCompare(a.data))[0];
+    const last = db.vendas.filter(v => v.produto === nomeProduto()).sort((a, b) => b.data.localeCompare(a.data))[0];
     if (last) { fv.valorUnit.value = last.valorUnit; calcTotal(); }
   });
   fv.addEventListener('submit', e => {
@@ -1153,13 +1272,14 @@ function bindEvents() {
     const o = Object.fromEntries(new FormData(fv));
     const qtd = parseFloat(o.qtd), vu = parseFloat(o.valorUnit);
     if (!o.clienteId) return toast('Selecione o cliente.', 'error');
-    if (!o.produto.trim()) return toast('Informe o produto.', 'error');
+    const produto = nomeProduto().replace(/\s+/g, ' ');
+    if (!produto) return toast('Selecione ou digite o produto.', 'error');
     if (!(qtd > 0)) return toast('Quantidade deve ser maior que zero.', 'error');
     if (!(vu >= 0)) return toast('Valor unitário inválido.', 'error');
-    db.vendas.push({ id: uid(), clienteId: o.clienteId, data: o.data, produto: o.produto.trim(), qtd, valorUnit: vu });
+    db.vendas.push({ id: uid(), clienteId: o.clienteId, data: o.data, produto, qtd, valorUnit: vu });
     save();
     const keepCli = o.clienteId;
-    fv.reset(); fv.data.value = todayISO(); fv.clienteId.value = keepCli; calcTotal();
+    fv.reset(); fv.data.value = todayISO(); fv.clienteId.value = keepCli; fv.produto.classList.add('hidden'); fv.produto.required = false; calcTotal();
     renderAll(); toast(`Venda registrada: ${fmtBRL(qtd * vu)}`);
   });
   $('#vendaFiltro').addEventListener('change', renderVendas);
