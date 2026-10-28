@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM DO SÉRGIO</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1E40AF">
+<meta name="theme-color" content="#063B19">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,9 +47,12 @@
 <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg sticky top-0 z-30">
   <div class="max-w-7xl mx-auto px-4 pt-3 pb-1 flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 min-w-0">
-      <div id="logo" class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500 grid place-items-center shadow-md"></div>
+      <div class="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-white grid place-items-center shadow-md p-1">
+        <img src="icons/logo-emblema.webp" alt="VetAgro Consultoria" class="w-full h-full object-contain" width="48" height="48">
+      </div>
       <div class="min-w-0">
         <h1 class="text-base sm:text-xl font-bold leading-tight truncate">CRM DO SÉRGIO</h1>
+        <p class="text-[10px] sm:text-[11px] font-semibold tracking-[0.18em] text-emerald-300 truncate">VETAGRO CONSULTORIA</p>
         <p id="hoje" class="text-xs text-blue-100 truncate hidden sm:block"></p>
       </div>
     </div>
@@ -313,9 +316,11 @@
   <div class="min-h-full flex items-center justify-center p-4">
     <div class="w-full max-w-sm">
       <div class="text-center text-white mb-6">
-        <div class="mx-auto w-14 h-14 rounded-2xl bg-emerald-500 grid place-items-center shadow-lg mb-3" data-ic="leaf" data-ic-cls="w-8 h-8"></div>
+        <div class="mx-auto w-56 sm:w-64 rounded-3xl bg-white p-4 shadow-2xl mb-4">
+          <img src="icons/logo-completa.webp" alt="VetAgro Consultoria Veterinária e Agronômica" class="w-full h-auto" width="640" height="565">
+        </div>
         <h1 class="text-2xl font-bold">CRM DO SÉRGIO</h1>
-        <p class="text-sm text-blue-100">Seus dados no notebook e no celular</p>
+        <p class="text-sm text-emerald-200">Seus dados no notebook e no celular</p>
       </div>
       <div class="card p-6 shadow-2xl">
         <h2 id="loginTitle" class="text-lg font-bold mb-4">Entrar</h2>
@@ -1016,11 +1021,11 @@ const curva = c => (c && (c.abcManual || S.auto[c.id])) || 'C';
 const cliById = id => db.clientes.find(c => c.id === id);
 const cliName = id => cliById(id)?.nome || '(cliente removido)';
 const CURVA_CLS = {
-  A: 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
-  B: 'bg-blue-100 text-blue-700 ring-blue-600/20',
+  A: 'bg-emerald-500 text-white ring-emerald-600/30',
+  B: 'bg-blue-100 text-blue-800 ring-blue-600/30',
   C: 'bg-slate-200 text-slate-600 ring-slate-500/20'
 };
-const AVATAR_CLS = { A: 'bg-emerald-500 text-white', B: 'bg-blue-600 text-white', C: 'bg-slate-300 text-slate-700' };
+const AVATAR_CLS = { A: 'bg-emerald-500 text-white', B: 'bg-blue-700 text-white', C: 'bg-slate-300 text-slate-700' };
 function badge(c, small) {
   const k = curva(c);
   const manual = c && c.abcManual ? '<span class="ml-1 opacity-70 font-normal" title="Definida manualmente">✎</span>' : '';
@@ -1298,7 +1303,7 @@ function gerarXLSX(abas) { // abas: [{ nome, cols, linhas }]
     ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
     ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${abas.map((a, i) => `<sheet name="${nomes[i]}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${abas.map((a, i) => `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${nomes[i]}'!$A$1:$${colLetra(a.cols.length - 1)}$${a.linhas.length + 1}</definedName></definedNames>`).join('').replace(/<\/definedNames><definedNames>/g, '')}</workbook>`],
     ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${abas.map((a, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${abas.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
-    ['xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="&quot;R$&quot;\\ #,##0.00"/><numFmt numFmtId="165" formatCode="dd/mm/yyyy"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1E40AF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+    ['xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="&quot;R$&quot;\\ #,##0.00"/><numFmt numFmtId="165" formatCode="dd/mm/yyyy"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF063B19"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
     ...abas.map((a, i) => [`xl/worksheets/sheet${i + 1}.xml`, planilhaXML(a.cols, a.linhas)])
   ];
   return zipStore(arquivos);
@@ -1954,7 +1959,6 @@ function bindEvents() {
 /* ---------- Init ---------- */
 function init() {
   $$('[data-ic]').forEach(el => { el.innerHTML = ic(el.dataset.ic, el.dataset.icCls || 'w-5 h-5'); if (!el.className) el.className = 'inline-flex'; });
-  $('#logo').innerHTML = ic('leaf', 'w-6 h-6 text-white');
   const h = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   $('#hoje').textContent = h.charAt(0).toUpperCase() + h.slice(1);
   bindEvents();

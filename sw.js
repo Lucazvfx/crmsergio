@@ -1,9 +1,9 @@
 /* Service worker do CRM do Sérgio
    - Guarda o app no aparelho para abrir sem internet
    - Recebe as notificações enviadas pelo Supabase (lembretes e resumo do dia) */
-const VERSAO = '7cfd2a3385';
+const VERSAO = '83f952c855';
 const CACHE = 'crm-sergio-' + VERSAO;
-const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/badge-96.png'];
+const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/badge-96.png', './icons/logo-emblema.webp', './icons/logo-completa.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
