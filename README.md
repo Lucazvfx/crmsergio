@@ -1,4 +1,4 @@
-# CRM do Sérgio
+# CRM DO SÉRGIO
 
 CRM comercial em um único arquivo (`index.html`): clientes com Curva ABC, vendas, registro de visitas técnico-comerciais e agenda semanal.
 
@@ -12,7 +12,11 @@ CRM comercial em um único arquivo (`index.html`): clientes com Curva ABC, venda
 |---|---|
 | `index.html` | O app pronto. É o único arquivo publicado. |
 | `dev/index.src.html` | Fonte editável (Tailwind ainda não compilado). |
-| `dev/build.sh` | Gera o `index.html` a partir do fonte. |
+| `dev/build.sh` | Gera o `index.html` e o `sw.js` a partir dos fontes. |
+| `dev/sw.src.js` | Fonte do service worker (offline + notificações). |
+| `manifest.webmanifest`, `icons/` | Instalação como app (PWA). |
+| `supabase/functions/notificar/` | Função que envia lembretes e o resumo do dia. |
+| `supabase/schema.sql` | Tabelas, regras de acesso e agendador do Supabase. |
 
 ## Deploy na Vercel
 
@@ -35,6 +39,14 @@ cd dev && ./build.sh   # precisa de Node.js e Python 3
 
 Edite sempre o `dev/index.src.html`. Alterações feitas direto no `index.html` são sobrescritas no próximo build,
 e classes novas do Tailwind só ganham estilo depois do build.
+
+## Instalar como app e notificações
+
+- **Android (Chrome)**: menu da conta → **Instalar app**.
+- **iPhone (Safari)**: Compartilhar → **Adicionar à Tela de Início**. No iPhone as notificações só funcionam com o app instalado.
+- **Notificações**: menu da conta → **Notificações** → escolher o lembrete (15 min a 2 h antes da visita) e o resumo do dia (6h, 7h ou 8h).
+  Cada aparelho é ativado separadamente.
+- Envio: `pg_cron` chama a função `notificar` a cada 5 minutos. Chaves VAPID e segredo do agendador ficam no Vault do Supabase.
 
 ## Como os dados ficam salvos
 

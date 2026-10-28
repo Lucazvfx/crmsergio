@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRM do Sérgio</title>
+<title>CRM DO SÉRGIO</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1E40AF">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CRM SÉRGIO">
 <!--TW-->
 <style type="text/tailwindcss">
 @layer components {
@@ -41,7 +49,7 @@
     <div class="flex items-center gap-3 min-w-0">
       <div id="logo" class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500 grid place-items-center shadow-md"></div>
       <div class="min-w-0">
-        <h1 class="text-base sm:text-xl font-bold leading-tight truncate">CRM do Sérgio</h1>
+        <h1 class="text-base sm:text-xl font-bold leading-tight truncate">CRM DO SÉRGIO</h1>
         <p id="hoje" class="text-xs text-blue-100 truncate hidden sm:block"></p>
       </div>
     </div>
@@ -58,6 +66,8 @@
           <div class="w-60 rounded-xl bg-white text-slate-700 shadow-xl border border-slate-200 p-3">
             <p class="text-[11px] uppercase font-bold text-slate-400">Conectado como</p>
             <p id="userEmail" class="text-sm font-semibold truncate mb-2"></p>
+            <button id="btnNotif" class="btn-ghost w-full !py-1.5 mb-2"><span data-ic="bell" data-ic-cls="w-4 h-4"></span>Notificações</button>
+            <button id="btnInstall" class="btn-secondary w-full !py-1.5 mb-2 hidden"><span data-ic="download" data-ic-cls="w-4 h-4"></span>Instalar app</button>
             <button id="btnLogout" class="btn-ghost w-full !py-1.5">Sair da conta</button>
           </div>
         </div>
@@ -241,7 +251,7 @@
     <div class="w-full max-w-sm">
       <div class="text-center text-white mb-6">
         <div class="mx-auto w-14 h-14 rounded-2xl bg-emerald-500 grid place-items-center shadow-lg mb-3" data-ic="leaf" data-ic-cls="w-8 h-8"></div>
-        <h1 class="text-2xl font-bold">CRM do Sérgio</h1>
+        <h1 class="text-2xl font-bold">CRM DO SÉRGIO</h1>
         <p class="text-sm text-blue-100">Seus dados no notebook e no celular</p>
       </div>
       <div class="card p-6 shadow-2xl">
@@ -300,6 +310,7 @@ const ICON = {
   x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
+  bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   trend:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'
 };
@@ -629,6 +640,101 @@ function updateSyncUI() {
   el.title = st[1] + (sync.lastOk ? ` · última sincronização ${new Date(sync.lastOk).toLocaleString('pt-BR')}` : '') + (syncErr ? ` · ${syncErr}` : '') + ' · clique para sincronizar agora';
 }
 
+/* =====================================================================
+   PWA: instalação, funcionamento offline e notificações (Web Push)
+   ===================================================================== */
+const PUSH_KEY = 'crm_sergio_push';
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+let installEvt = null;
+function initPWA() {
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('Service worker não registrado', e));
+    navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.tipo === 'abrirAba' && ev.data.tab) showTab(ev.data.tab); });
+  }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#btnInstall').classList.remove('hidden'); });
+  window.addEventListener('appinstalled', () => { installEvt = null; $('#btnInstall').classList.add('hidden'); toast('App instalado.'); });
+  if (isIOS && !isStandalone()) $('#btnInstall').classList.remove('hidden');
+  $('#btnInstall').addEventListener('click', async () => {
+    $('#userMenu').classList.add('hidden');
+    if (installEvt) { installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('#btnInstall').classList.add('hidden'); return; }
+    openModal(`${modalHead('Instalar no iPhone / iPad')}<div class="p-5 space-y-3 text-sm text-slate-700">
+      <p>1. Abra este site no <b>Safari</b>.</p><p>2. Toque em <b>Compartilhar</b> (quadrado com seta para cima).</p>
+      <p>3. Escolha <b>Adicionar à Tela de Início</b> e confirme.</p><p>4. Abra o CRM pelo ícone novo. As notificações só funcionam no iPhone a partir daí.</p></div>`);
+  });
+}
+const pushSuportado = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && /^https?:$/.test(location.protocol);
+const pushLocal = () => { try { return JSON.parse(localStorage.getItem(PUSH_KEY)) || null; } catch (e) { return null; } };
+const b64ToU8 = b => { const p = '='.repeat((4 - b.length % 4) % 4), s = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...s].map(c => c.charCodeAt(0))); };
+async function ativarPush(lembrete_min, resumo_hora) {
+  if (!navigator.onLine) throw new Error('Conecte-se à internet para ativar as notificações.');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') throw new Error(perm === 'denied' ? 'As notificações foram bloqueadas para este site. Libere nas configurações do navegador (ícone de cadeado ao lado do endereço).' : 'Permissão não concedida.');
+  const reg = await navigator.serviceWorker.ready;
+  const chave = await api('/rest/v1/rpc/crm_vapid_publica', { method: 'POST', body: {} });
+  if (!chave) throw new Error('O servidor de notificações ainda não está pronto. Tente em 5 minutos.');
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(chave) });
+  const j = sub.toJSON();
+  const row = { endpoint: j.endpoint, user_id: session.user.id, p256dh: j.keys.p256dh, auth: j.keys.auth,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Porto_Velho', lembrete_min, resumo_hora: resumo_hora || null,
+    user_agent: navigator.userAgent.slice(0, 390), updated_at: new Date().toISOString() };
+  await api('/rest/v1/push_subscriptions?on_conflict=endpoint', { method: 'POST', body: row, headers: { Prefer: 'resolution=merge-duplicates,return=minimal' } });
+  localStorage.setItem(PUSH_KEY, JSON.stringify({ endpoint: j.endpoint, lembrete_min, resumo_hora, user: session.user.id }));
+}
+async function desativarPush(silencioso) {
+  const local = pushLocal();
+  let sub = null;
+  try { sub = pushSuportado() ? await (await navigator.serviceWorker.ready).pushManager.getSubscription() : null; } catch (e) {}
+  const endpoint = (sub && sub.endpoint) || (local && local.endpoint);
+  if (endpoint && session && navigator.onLine) {
+    try { await api('/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(endpoint), { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); }
+    catch (e) { if (!silencioso) throw e; }
+  }
+  if (sub) await sub.unsubscribe().catch(() => {});
+  localStorage.removeItem(PUSH_KEY);
+}
+function abrirNotificacoes() {
+  $('#userMenu').classList.add('hidden');
+  const local = pushLocal(), ativo = !!(local && session && local.user === session.user.id);
+  let aviso = '';
+  if (isIOS && !isStandalone()) aviso = 'No iPhone, as notificações só funcionam com o app instalado: Compartilhar → <b>Adicionar à Tela de Início</b>, e depois abra pelo ícone.';
+  else if (!pushSuportado()) aviso = 'Este navegador não suporta notificações. No celular, use o Chrome (Android) ou o app instalado (iPhone).';
+  else if (Notification.permission === 'denied') aviso = 'As notificações estão <b>bloqueadas</b> para este site. Libere nas configurações do navegador e tente de novo.';
+  const sel = (nome, opts, v) => `<select name="${nome}" class="input">${opts.map(([val, txt]) => `<option value="${val}" ${String(v) === String(val) ? 'selected' : ''}>${txt}</option>`).join('')}</select>`;
+  openModal(`${modalHead('Notificações', 'Neste aparelho')}
+    <form id="formNotif" class="p-5 space-y-4">
+      ${aviso ? `<div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3">${aviso}</div>` : ''}
+      <div class="rounded-lg ${ativo ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-600'} border text-sm p-3 flex items-center gap-2">
+        ${ic('bell', 'w-4 h-4 shrink-0')}<span>${ativo ? '<b>Ativadas</b> neste aparelho.' : 'Desativadas neste aparelho.'}</span></div>
+      <div><label class="label">Lembrete antes de cada visita</label>
+        ${sel('lembrete', [[0, 'Desligado'], [15, '15 minutos antes'], [30, '30 minutos antes'], [60, '1 hora antes'], [120, '2 horas antes']], ativo ? local.lembrete_min : 30)}</div>
+      <div><label class="label">Resumo das visitas do dia</label>
+        ${sel('resumo', [['', 'Desligado'], ['06:00', 'Às 6h'], ['07:00', 'Às 7h'], ['08:00', 'Às 8h']], ativo ? (local.resumo_hora || '') : '07:00')}</div>
+      <p class="text-[11px] text-slate-500 leading-snug">As notificações chegam mesmo com o app fechado, com até 5 minutos de diferença. Visitas marcadas como concluídas não geram lembrete. Cada aparelho (celular, notebook) é ativado separadamente.</p>
+      <div id="notifMsg"></div>
+      <div class="flex flex-wrap justify-end gap-2">
+        ${ativo ? `<button type="button" id="notifTeste" class="btn-ghost">Testar aqui</button><button type="button" id="notifOff" class="btn-ghost">Desativar</button>` : ''}
+        <button type="submit" class="btn-primary" ${aviso && !ativo ? 'disabled style="opacity:.5"' : ''}>${ic('bell', 'w-4 h-4')}${ativo ? 'Salvar' : 'Ativar notificações'}</button>
+      </div>
+    </form>`);
+  const msg = (t, ok) => $('#notifMsg').innerHTML = `<div class="rounded-lg ${ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'} border text-sm p-3">${esc(t)}</div>`;
+  $('#formNotif').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, btn = f.querySelector('[type=submit]'); btn.disabled = true;
+    try { await ativarPush(parseInt(f.lembrete.value, 10), f.resumo.value); closeModal(); toast('Notificações ativadas neste aparelho.'); }
+    catch (err) { msg(err.status ? traduzErro(err) : err.message, false); }
+    finally { btn.disabled = false; }
+  };
+  if (ativo) {
+    $('#notifOff').onclick = async () => { try { await desativarPush(false); closeModal(); toast('Notificações desativadas neste aparelho.', 'info'); } catch (err) { msg(traduzErro(err), false); } };
+    $('#notifTeste').onclick = async () => {
+      try { const reg = await navigator.serviceWorker.ready; await reg.showNotification('CRM DO SÉRGIO', { body: 'Teste: as notificações estão funcionando neste aparelho.', icon: './icons/icon-192.png', badge: './icons/badge-96.png', tag: 'teste' }); msg('Notificação de teste enviada. Se não apareceu, verifique o modo "Não perturbe" e as permissões do sistema.', true); }
+      catch (err) { msg('Não foi possível mostrar a notificação: ' + err.message, false); }
+    };
+  }
+}
+
 /* ---------- Login ---------- */
 let loginMode = 'entrar';
 function showLogin(msg = '', email = '') {
@@ -727,6 +833,7 @@ async function logout() {
     ? `<b>${n} alteração(ões) ainda não foram enviadas</b> para a nuvem (sem internet?). Se sair agora, elas serão perdidas.`
     : 'Os dados deste aparelho serão apagados do navegador. Tudo continua salvo na nuvem e volta quando você entrar de novo.',
     n ? 'Sair mesmo assim' : 'Sair', async () => {
+      try { await desativarPush(true); } catch (e) {}
       try { if (navigator.onLine) await api('/auth/v1/logout', { method: 'POST', retry: false }); } catch (e) {}
       try { localStorage.removeItem(storeKey(session.user.id)); localStorage.removeItem(SESSION_KEY); } catch (e) {}
       location.reload();
@@ -798,7 +905,7 @@ function seed() {
 /* ---------- Estado ---------- */
 let db = emptyDB();
 let S = {};
-let currentTab = loadUI().tab || 'clientes';
+let currentTab = new URLSearchParams(location.search).get('tab') || loadUI().tab || 'clientes';
 let weekStart = mondayOf(new Date());
 
 /* ---------- Estatísticas / Curva ABC ---------- */
@@ -1397,6 +1504,8 @@ function init() {
   // login
   $('#formLogin').addEventListener('submit', submitLogin);
   $('#loginToggle').addEventListener('click', () => { setLoginMode(loginMode === 'entrar' ? 'criar' : 'entrar'); $('#loginMsg').innerHTML = ''; });
+  $('#btnNotif').addEventListener('click', abrirNotificacoes);
+  initPWA();
   $('#btnLogout').addEventListener('click', () => { $('#userMenu').classList.add('hidden'); logout(); });
   $('#userBtn').addEventListener('click', e => { e.stopPropagation(); $('#userMenu').classList.toggle('hidden'); });
   document.addEventListener('click', e => { if (!e.target.closest('#userMenu')) $('#userMenu').classList.add('hidden'); });

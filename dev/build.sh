@@ -20,5 +20,10 @@ s = re.sub(r'<!--TW-->\n<style type="text/tailwindcss">.*?</style>',
            s, count=1, flags=re.S)
 open('../index.html', 'w', encoding='utf-8').write(s)
 print('index.html gerado (%d bytes)' % len(s))
+import hashlib
+v = hashlib.sha256(s.encode('utf-8')).hexdigest()[:10]
+sw = open('sw.src.js', encoding='utf-8').read().replace('__VERSAO__', v)
+open('../sw.js', 'w', encoding='utf-8').write(sw)
+print('sw.js gerado (versão %s)' % v)
 PY
 rm -f tw.in.css tw.out.css
