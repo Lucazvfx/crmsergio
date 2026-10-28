@@ -376,7 +376,9 @@ async function api(path, { method = 'GET', body, headers = {}, auth = true, retr
   if (auth) await ensureToken();
   const h = { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...headers };
   if (auth) h.Authorization = 'Bearer ' + session.access_token;
-  const res = await fetch(SUPABASE_URL + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined });
+  let res;
+  try { res = await fetch(SUPABASE_URL + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined }); }
+  catch (e) { const err = new Error(e.message || 'Failed to fetch'); err.network = true; throw err; }   // a requisição nem chegou ao servidor
   const txt = await res.text();
   let data = null; try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = txt; }
   if (res.status === 401 && auth && retry) { session.expires_at = 0; return api(path, { method, body, headers, auth, retry: false }); }
@@ -396,7 +398,7 @@ function ensureToken() {
   if (session.expires_at * 1000 - Date.now() > 60000) return Promise.resolve();
   if (!refreshing) refreshing = (async () => {
     try { setSession(await api('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false })); }
-    catch (e) { if (e.status) e.authDead = true; throw e; }   // sem status = sem internet; com status = sessão inválida
+    catch (e) { if (e.status) e.authDead = true; throw e; }   // e.network = sem conexão; com status = sessão inválida
     finally { refreshing = null; }
   })();
   return refreshing;
@@ -416,8 +418,8 @@ async function syncNow() {
     if (changed) renderAll();
   } catch (e) {
     if (e.authDead) { syncState = 'auth'; showLogin('Sua sessão expirou. Entre de novo para voltar a sincronizar. Os dados deste aparelho estão preservados.', session.user.email); }
-    else if (!e.status) syncState = 'offline';
-    else { syncState = 'error'; syncErr = e.message; console.warn('Erro de sincronização', e); }
+    else if (e.network) syncState = 'offline';
+    else { syncState = 'error'; syncErr = e.message; console.error('Erro de sincronização', e); }
   } finally {
     syncing = false; updateSyncUI();
     if (syncAgain) { syncAgain = false; syncSoon(300); }
@@ -494,7 +496,9 @@ function setLoginMode(m) {
   $('#formLogin').senha.autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
 }
 function traduzErro(e) {
-  if (!e.status) return 'Sem conexão com a internet. O primeiro acesso em cada aparelho precisa de internet.';
+  if (e.network && !navigator.onLine) return 'Este aparelho está sem internet. O primeiro acesso em cada aparelho precisa de conexão.';
+  if (e.network) return `Não foi possível falar com o servidor (supabase.co), apesar de haver internet. Causas comuns: o arquivo foi aberto dentro de uma pré-visualização (abra pelo link da Vercel), um bloqueador de anúncios ou extensão está barrando, ou a rede (Wi-Fi da empresa) bloqueia o endereço. Detalhe técnico: ${e.message}`;
+  if (!e.status) { console.error(e); return 'Erro inesperado no aplicativo: ' + e.message; }
   const c = (e.code || '') + ' ' + e.message;
   if (/invalid_credentials|Invalid login/i.test(c)) return 'E-mail ou senha incorretos.';
   if (/email_not_confirmed|not confirmed/i.test(c)) return 'Confirme seu e-mail antes de entrar (veja a caixa de entrada e o spam).';
@@ -542,7 +546,7 @@ async function afterLogin() {
     sync.lastOk = Date.now(); syncState = 'ok'; persist(); renderAll();
     if (TABELAS.every(t => !db[t].length)) onboarding();
   } catch (e) {
-    syncState = e.status ? 'error' : 'offline'; syncErr = e.message;
+    syncState = e.network ? 'offline' : 'error'; syncErr = e.message; if (!e.network) console.error(e);
     toast('Não foi possível baixar seus dados agora. Tente de novo com internet.', 'error');
   }
   updateSyncUI();
