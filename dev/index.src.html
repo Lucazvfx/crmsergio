@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM do Sérgio</title>
+<!--TW-->
+<style type="text/tailwindcss">
+@layer components {
+  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500; }
+  .label { @apply block text-xs font-semibold text-slate-600 mb-1; }
+  .card { @apply bg-white rounded-2xl shadow-sm border border-slate-200; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1; }
+  .btn-primary { @apply btn bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; }
+  .btn-secondary { @apply btn bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500; }
+  .btn-ghost { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-300; }
+  .icon-btn { @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-blue-700 transition; }
+  .icon-btn-danger { @apply icon-btn hover:bg-red-50 hover:text-red-600; }
+  .tab-btn { @apply flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium text-blue-100 border-b-[3px] border-transparent hover:text-white transition; }
+  .tab-btn.active { @apply text-white border-emerald-400; }
+  .hdr-btn { @apply inline-flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-blue-50 hover:bg-white/10 transition; }
+  .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
+  .td { @apply px-4 py-3 text-sm text-slate-700 whitespace-nowrap; }
+  .chip { @apply rounded-xl bg-slate-50 border border-slate-200 px-4 py-3; }
+}
+</style>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .fade-in { animation: fade .25s ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  input[type=number]::-webkit-inner-spin-button { opacity: .5; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+<!-- ================= HEADER ================= -->
+<header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 pt-3 pb-1 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <div id="logo" class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500 grid place-items-center shadow-md"></div>
+      <div class="min-w-0">
+        <h1 class="text-base sm:text-xl font-bold leading-tight truncate">CRM do Sérgio</h1>
+        <p id="hoje" class="text-xs text-blue-100 truncate hidden sm:block"></p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1 shrink-0">
+      <button id="syncBtn" class="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 px-3 py-1.5 text-xs font-semibold text-white mr-1 transition"></button>
+      <button id="btnExport" class="hdr-btn" title="Exportar backup (JSON)"><span data-ic="download"></span><span class="hidden md:inline">Backup</span></button>
+      <label class="hdr-btn cursor-pointer !hidden sm:!inline-flex" title="Importar backup (JSON)"><span data-ic="upload"></span><span class="hidden md:inline">Importar</span>
+        <input type="file" id="fileImport" accept=".json,application/json" class="hidden">
+      </label>
+      <button id="btnReset" class="hdr-btn !hidden sm:!inline-flex" title="Restaurar dados de exemplo"><span data-ic="refresh"></span><span class="hidden md:inline">Demo</span></button>
+      <div class="relative ml-1">
+        <button id="userBtn" class="hdr-btn" title="Conta"><span class="w-7 h-7 rounded-full bg-emerald-500 grid place-items-center" data-ic="users" data-ic-cls="w-4 h-4"></span></button>
+        <div id="userMenu" class="absolute right-0 top-full pt-1 hidden z-40">
+          <div class="w-60 rounded-xl bg-white text-slate-700 shadow-xl border border-slate-200 p-3">
+            <p class="text-[11px] uppercase font-bold text-slate-400">Conectado como</p>
+            <p id="userEmail" class="text-sm font-semibold truncate mb-2"></p>
+            <button id="btnLogout" class="btn-ghost w-full !py-1.5">Sair da conta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav id="tabs" class="max-w-7xl mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar">
+    <button class="tab-btn" data-tab="clientes"><span data-ic="users" data-ic-cls="w-4 h-4"></span>Clientes</button>
+    <button class="tab-btn" data-tab="vendas"><span data-ic="cart" data-ic-cls="w-4 h-4"></span>Vendas</button>
+    <button class="tab-btn" data-tab="visitas"><span data-ic="clipboard" data-ic-cls="w-4 h-4"></span>Registro de Visitas</button>
+    <button class="tab-btn" data-tab="agenda"><span data-ic="calendar" data-ic-cls="w-4 h-4"></span>Agenda Semanal</button>
+  </nav>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+  <!-- ================= CARDS ================= -->
+  <section id="cards" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"></section>
+
+  <!-- ================= CLIENTES ================= -->
+  <section id="tab-clientes" class="tab-panel hidden grid lg:grid-cols-3 gap-6">
+    <div class="card p-5 h-fit lg:sticky lg:top-32" id="boxFormCliente">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="cliFormTitle" class="text-base font-bold text-slate-800">Novo cliente</h2>
+        <span class="text-[11px] text-slate-400">* obrigatório</span>
+      </div>
+      <form id="formCliente" class="space-y-3" autocomplete="off">
+        <input type="hidden" name="id">
+        <div><label class="label">Nome / Razão Social *</label><input name="nome" class="input" placeholder="Ex.: Fazenda Santa Luzia" required></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+          <div><label class="label">CPF / CNPJ</label><input name="doc" class="input" inputmode="numeric" placeholder="000.000.000-00"></div>
+          <div><label class="label">Telefone / WhatsApp</label><input name="telefone" class="input" inputmode="tel" placeholder="(69) 99999-0000"></div>
+        </div>
+        <div><label class="label">Cidade</label><input name="cidade" class="input" placeholder="Ex.: Vilhena - RO"></div>
+        <div><label class="label">Perfil Comercial</label>
+          <select name="perfil" class="input">
+            <option>Pecuária de Corte</option><option>Pecuária de Leite</option><option>Agricultura de Grãos</option>
+            <option>Cafeicultura</option><option>Hortifruti</option><option>Avicultura / Suinocultura</option>
+            <option>Revenda / Cooperativa</option><option>Outros</option>
+          </select>
+        </div>
+        <div><label class="label">Classificação Curva ABC</label>
+          <select name="abcManual" class="input">
+            <option value="">Automática (pelo faturamento)</option>
+            <option value="A">A — Alto valor (manual)</option>
+            <option value="B">B — Médio valor (manual)</option>
+            <option value="C">C — Baixo valor (manual)</option>
+          </select>
+          <p class="mt-1 text-[11px] text-slate-500 leading-snug">Automática: A = clientes que somam até 80% do faturamento, B = até 95%, C = restante.</p>
+        </div>
+        <div><label class="label">Observações</label><textarea name="obs" rows="2" class="input" placeholder="Tamanho do rebanho, área plantada, decisor de compra..."></textarea></div>
+        <div class="flex gap-2 pt-1">
+          <button type="submit" class="btn-primary flex-1"><span data-ic="check" data-ic-cls="w-4 h-4"></span><span id="cliSubmitLbl">Cadastrar cliente</span></button>
+          <button type="button" id="cliCancel" class="btn-ghost hidden">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card lg:col-span-2 overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <h2 class="text-base font-bold">Carteira de clientes</h2>
+          <p id="cliCount" class="text-xs text-slate-500"></p>
+        </div>
+        <div class="flex gap-2">
+          <div class="relative flex-1 sm:w-60">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex" data-ic="search" data-ic-cls="w-4 h-4"></span>
+            <input id="cliBusca" class="input pl-9" placeholder="Buscar nome, cidade, doc...">
+          </div>
+          <select id="cliFiltroCurva" class="input w-auto">
+            <option value="">Todas</option><option value="A">Curva A</option><option value="B">Curva B</option><option value="C">Curva C</option>
+          </select>
+        </div>
+      </div>
+      <div id="listaClientes" class="divide-y divide-slate-100"></div>
+    </div>
+  </section>
+
+  <!-- ================= VENDAS ================= -->
+  <section id="tab-vendas" class="tab-panel hidden grid lg:grid-cols-3 gap-6">
+    <div class="card p-5 h-fit lg:sticky lg:top-32">
+      <h2 class="text-base font-bold mb-4">Lançar venda</h2>
+      <form id="formVenda" class="space-y-3" autocomplete="off">
+        <div><label class="label">Cliente *</label><select name="clienteId" data-cli class="input" required></select></div>
+        <div><label class="label">Data *</label><input type="date" name="data" class="input" required></div>
+        <div><label class="label">Produto *</label><input name="produto" list="listaProdutos" class="input" placeholder="Ex.: Sal mineral 30kg" required><datalist id="listaProdutos"></datalist></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label">Quantidade *</label><input type="number" name="qtd" min="0.01" step="0.01" class="input" placeholder="0" required></div>
+          <div><label class="label">Valor unitário (R$) *</label><input type="number" name="valorUnit" min="0" step="0.01" class="input" placeholder="0,00" required></div>
+        </div>
+        <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center justify-between">
+          <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wide">Valor total</span>
+          <span id="vendaTotal" class="text-xl font-bold text-emerald-700">R$ 0,00</span>
+        </div>
+        <button type="submit" class="btn-primary w-full"><span data-ic="plus" data-ic-cls="w-4 h-4"></span>Registrar venda</button>
+      </form>
+    </div>
+
+    <div class="lg:col-span-2 space-y-6">
+      <div class="card overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <h2 class="text-base font-bold">Histórico de vendas</h2>
+          <select id="vendaFiltro" class="input sm:w-64"></select>
+        </div>
+        <div id="vendaResumo" class="p-4 sm:p-5 grid grid-cols-3 gap-3 border-b border-slate-100"></div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead class="bg-slate-50"><tr><th class="th">Data</th><th class="th">Cliente</th><th class="th">Produto</th><th class="th text-right">Qtd</th><th class="th text-right">Unitário</th><th class="th text-right">Total</th><th class="th"></th></tr></thead>
+            <tbody id="tbVendas" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200">
+          <h2 class="text-base font-bold">Resumo por cliente</h2>
+          <p class="text-xs text-slate-500">Total acumulado, ticket médio e participação no faturamento</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead class="bg-slate-50"><tr><th class="th">Cliente</th><th class="th">Curva</th><th class="th text-right">Compras</th><th class="th text-right">Total acumulado</th><th class="th text-right">Ticket médio</th><th class="th text-right">Part.</th><th class="th">Última compra</th></tr></thead>
+            <tbody id="tbResumoCli" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VISITAS ================= -->
+  <section id="tab-visitas" class="tab-panel hidden grid lg:grid-cols-3 gap-6">
+    <div class="card p-5 h-fit lg:sticky lg:top-32">
+      <h2 class="text-base font-bold mb-4">Registrar atendimento</h2>
+      <form id="formVisita" class="space-y-3" autocomplete="off"></form>
+    </div>
+    <div class="card lg:col-span-2 overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <h2 class="text-base font-bold">Histórico de atendimentos</h2>
+          <p id="visCount" class="text-xs text-slate-500"></p>
+        </div>
+        <div class="flex gap-2">
+          <select id="visFiltroCli" class="input sm:w-56"></select>
+          <select id="visFiltroTipo" class="input w-auto"><option value="">Todos</option><option>Presencial</option><option>WhatsApp</option><option>Ligação</option></select>
+        </div>
+      </div>
+      <div id="listaVisitas" class="p-4 sm:p-6"></div>
+    </div>
+  </section>
+
+  <!-- ================= AGENDA ================= -->
+  <section id="tab-agenda" class="tab-panel hidden space-y-4">
+    <div class="card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <h2 class="text-base font-bold">Agenda semanal</h2>
+        <p id="semanaLabel" class="text-sm text-blue-700 font-medium"></p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+          <button data-action="weekPrev" class="px-3 py-2 hover:bg-slate-50" title="Semana anterior"><span data-ic="chevL" data-ic-cls="w-4 h-4"></span></button>
+          <button data-action="weekToday" class="px-3 py-2 text-sm font-medium border-x border-slate-300 hover:bg-slate-50">Hoje</button>
+          <button data-action="weekNext" class="px-3 py-2 hover:bg-slate-50" title="Próxima semana"><span data-ic="chevR" data-ic-cls="w-4 h-4"></span></button>
+        </div>
+        <button data-action="novaAgenda" class="btn-secondary"><span data-ic="plus" data-ic-cls="w-4 h-4"></span>Agendar visita</button>
+      </div>
+    </div>
+    <div id="gradeAgenda" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3"></div>
+    <p class="text-xs text-slate-500 flex items-center gap-1"><span data-ic="check" data-ic-cls="w-3.5 h-3.5"></span>Clique no status para alternar entre Pendente e Concluída. Ao concluir, abre o registro do histórico da visita.</p>
+  </section>
+</main>
+
+<!-- ================= LOGIN ================= -->
+<div id="login" class="hidden fixed inset-0 z-[70] overflow-y-auto bg-gradient-to-br from-blue-800 via-blue-700 to-emerald-600">
+  <div class="min-h-full flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+      <div class="text-center text-white mb-6">
+        <div class="mx-auto w-14 h-14 rounded-2xl bg-emerald-500 grid place-items-center shadow-lg mb-3" data-ic="leaf" data-ic-cls="w-8 h-8"></div>
+        <h1 class="text-2xl font-bold">CRM do Sérgio</h1>
+        <p class="text-sm text-blue-100">Seus dados no notebook e no celular</p>
+      </div>
+      <div class="card p-6 shadow-2xl">
+        <h2 id="loginTitle" class="text-lg font-bold mb-4">Entrar</h2>
+        <form id="formLogin" class="space-y-3">
+          <div id="loginMsg"></div>
+          <div><label class="label">E-mail</label><input type="email" name="email" class="input" required autocomplete="email" placeholder="voce@email.com"></div>
+          <div><label class="label">Senha</label><input type="password" name="senha" class="input" required minlength="6" autocomplete="current-password" placeholder="mínimo 6 caracteres"></div>
+          <button id="loginSubmit" type="submit" class="btn-primary w-full">Entrar</button>
+        </form>
+        <button id="loginToggle" type="button" class="mt-4 w-full text-sm text-blue-700 hover:underline"></button>
+      </div>
+      <p class="mt-4 text-center text-xs text-blue-100">Depois do primeiro acesso, o sistema funciona sem internet e sincroniza quando a conexão voltar.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div id="modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+  <div id="modalWrap" class="relative h-full overflow-y-auto flex items-end sm:items-center justify-center sm:p-4">
+    <div id="modalBox" class="fade-in bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[94vh] overflow-y-auto"></div>
+  </div>
+</div>
+<div id="toasts" class="fixed bottom-4 right-4 left-4 sm:left-auto z-[60] flex flex-col items-end gap-2 pointer-events-none"></div>
+
+<script>
+/* =====================================================================
+   CRM do Sérgio — HTML + Tailwind + JavaScript puro + localStorage
+   ===================================================================== */
+const KEY = 'crm_sergio_v1';
+const UI_KEY = 'crm_sergio_ui';
+
+/* ---------- Ícones (SVG inline) ---------- */
+const ICON = {
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  pie:'<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+  clipboard:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  edit:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  msg:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  pin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  chevL:'<polyline points="15 18 9 12 15 6"/>',
+  chevR:'<polyline points="9 18 15 12 9 6"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  refresh:'<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
+  alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  trend:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'
+};
+const ic = (n, c = 'w-5 h-5') => `<svg class="${c}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">${ICON[n] || ''}</svg>`;
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const toISO = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const mondayOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow = x.getDay(); return addDays(x, dow === 0 ? -6 : 1 - dow); };
+const todayISO = () => toISO(new Date());
+const nowLocal = () => { const d = new Date(); return `${toISO(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtDate = s => s ? parseISO(s.slice(0, 10)).toLocaleDateString('pt-BR') : '—';
+const fmtDT = s => s ? `${fmtDate(s)} às ${s.slice(11, 16)}` : '—';
+const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtNum = v => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const initials = n => n.split(/\s+/).filter(w => w.length > 2 || /^[A-ZÀ-Ú]/.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const TIPOS = {
+  'Presencial': { icon: 'pin', dot: 'bg-emerald-600', txt: 'text-emerald-700 bg-emerald-50' },
+  'WhatsApp':   { icon: 'msg', dot: 'bg-green-500',   txt: 'text-green-700 bg-green-50' },
+  'Ligação':    { icon: 'phone', dot: 'bg-blue-600',  txt: 'text-blue-700 bg-blue-50' }
+};
+
+function maskDoc(v) {
+  const d = v.replace(/\D/g, '').slice(0, 14);
+  if (d.length <= 11) return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  return d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+}
+function maskPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+const waLink = tel => { const d = (tel || '').replace(/\D/g, ''); return d.length >= 10 ? `https://wa.me/${d.length <= 11 ? '55' + d : d}` : null; };
+
+/* =====================================================================
+   Persistência local (por usuário) + sincronização com o Supabase
+   - Tudo é gravado primeiro no aparelho (funciona offline).
+   - Cada alteração entra numa fila ("outbox") e é enviada quando há internet.
+   - Conflito entre aparelhos: vence a alteração mais recente.
+   ===================================================================== */
+const SUPABASE_URL = 'https://lpkasnhyzlvzznsceouk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_YGa3MPPKsHp0kZNCYVKQ8g_nPZHRCgp'; // chave pública: segura para ficar no navegador (os dados são protegidos por RLS)
+const SESSION_KEY = 'crm_sergio_session';
+const storeKey = userId => 'crm_sergio_v2:' + userId;
+const TABELAS = ['clientes', 'vendas', 'visitas', 'agenda'];
+const emptyDB = () => ({ clientes: [], vendas: [], visitas: [], agenda: [], versao: 2 });
+const emptySync = () => ({ shadow: {}, outbox: {}, lastServerAt: null, lastOk: null });
+const valid = d => d && TABELAS.every(k => Array.isArray(d[k]));
+const stableStr = o => JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v)) ? Object.keys(v).sort().reduce((a, x) => (a[x] = v[x], a), {}) : v);
+
+let session = null;   // { access_token, refresh_token, expires_at, user: { id, email } }
+let sync = emptySync();
+let syncState = 'idle', syncErr = '', syncing = false, syncAgain = false, syncTimer = null;
+
+function persist() {
+  if (!session) return;
+  try { localStorage.setItem(storeKey(session.user.id), JSON.stringify({ db, sync })); }
+  catch (e) { toast('Não foi possível salvar no navegador (armazenamento bloqueado ou cheio).', 'error'); }
+}
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(storeKey(session.user.id));
+    if (raw) { const o = JSON.parse(raw); if (valid(o.db)) { db = o.db; sync = Object.assign(emptySync(), o.sync || {}); return true; } }
+  } catch (e) { console.warn('localStorage indisponível', e); }
+  db = emptyDB(); sync = emptySync(); return false;
+}
+// Compara o estado atual com a última versão conhecida e coloca as diferenças na fila de envio
+function diffIntoOutbox() {
+  const now = Date.now(), seen = {};
+  TABELAS.forEach(t => db[t].forEach(r => {
+    const k = t + ':' + r.id; seen[k] = 1;
+    const h = stableStr(r);
+    if (!sync.shadow[k] || sync.shadow[k].h !== h) {
+      sync.shadow[k] = { h, u: now };
+      sync.outbox[k] = { tipo: t, id: r.id, dados: JSON.parse(h), deleted: false, updated_at: now };
+    }
+  }));
+  Object.keys(sync.shadow).forEach(k => {
+    if (!seen[k]) {
+      const i = k.indexOf(':');
+      sync.outbox[k] = { tipo: k.slice(0, i), id: k.slice(i + 1), dados: null, deleted: true, updated_at: now };
+      delete sync.shadow[k];
+    }
+  });
+}
+function save() { diffIntoOutbox(); persist(); updateSyncUI(); syncSoon(); }
+
+/* ---------- API Supabase (fetch puro, sem biblioteca externa) ---------- */
+async function api(path, { method = 'GET', body, headers = {}, auth = true, retry = true } = {}) {
+  if (auth) await ensureToken();
+  const h = { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...headers };
+  if (auth) h.Authorization = 'Bearer ' + session.access_token;
+  const res = await fetch(SUPABASE_URL + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const txt = await res.text();
+  let data = null; try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = txt; }
+  if (res.status === 401 && auth && retry) { session.expires_at = 0; return api(path, { method, body, headers, auth, retry: false }); }
+  if (!res.ok) {
+    const err = new Error((data && (data.msg || data.message || data.error_description || data.error)) || ('HTTP ' + res.status));
+    err.status = res.status; err.code = data && (data.error_code || data.code); err.authDead = res.status === 401 && auth;
+    throw err;
+  }
+  return data;
+}
+function setSession(d) {
+  session = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), user: { id: d.user.id, email: d.user.email } };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+}
+let refreshing = null;
+function ensureToken() {
+  if (session.expires_at * 1000 - Date.now() > 60000) return Promise.resolve();
+  if (!refreshing) refreshing = (async () => {
+    try { setSession(await api('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false })); }
+    catch (e) { if (e.status) e.authDead = true; throw e; }   // sem status = sem internet; com status = sessão inválida
+    finally { refreshing = null; }
+  })();
+  return refreshing;
+}
+
+/* ---------- Sincronização ---------- */
+function syncSoon(ms = 1500) { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, ms); }
+async function syncNow() {
+  if (!session || syncState === 'auth') return;
+  if (syncing) { syncAgain = true; return; }
+  if (!navigator.onLine) { syncState = 'offline'; updateSyncUI(); return; }
+  syncing = true; syncState = 'syncing'; updateSyncUI();
+  try {
+    await pushOutbox();
+    const changed = await pull();
+    sync.lastOk = Date.now(); syncState = 'ok'; syncErr = ''; persist();
+    if (changed) renderAll();
+  } catch (e) {
+    if (e.authDead) { syncState = 'auth'; showLogin('Sua sessão expirou. Entre de novo para voltar a sincronizar. Os dados deste aparelho estão preservados.', session.user.email); }
+    else if (!e.status) syncState = 'offline';
+    else { syncState = 'error'; syncErr = e.message; console.warn('Erro de sincronização', e); }
+  } finally {
+    syncing = false; updateSyncUI();
+    if (syncAgain) { syncAgain = false; syncSoon(300); }
+  }
+}
+async function pushOutbox() {
+  const items = Object.entries(sync.outbox);
+  for (let i = 0; i < items.length; i += 500) {
+    const chunk = items.slice(i, i + 500);
+    const rows = chunk.map(([, o]) => ({ user_id: session.user.id, tipo: o.tipo, id: o.id, dados: o.dados, deleted: o.deleted, updated_at: o.updated_at }));
+    await api('/rest/v1/registros?on_conflict=user_id,tipo,id', { method: 'POST', body: rows, headers: { Prefer: 'resolution=merge-duplicates,return=minimal' } });
+    chunk.forEach(([k, o]) => { if (sync.outbox[k] && sync.outbox[k].updated_at === o.updated_at) delete sync.outbox[k]; });
+    persist(); updateSyncUI();
+  }
+}
+async function pull() {
+  let changed = false, cursor = null, first = true;
+  for (let page = 0; page < 200; page++) {
+    let q = '/rest/v1/registros?select=tipo,id,dados,deleted,updated_at,server_at&order=server_at.asc&limit=1000';
+    if (first && sync.lastServerAt) {
+      // volta 10 s para não perder gravações que estavam em andamento na última sincronização
+      q += '&server_at=gt.' + encodeURIComponent(new Date(new Date(sync.lastServerAt).getTime() - 10000).toISOString());
+    } else if (cursor) q += '&server_at=gt.' + encodeURIComponent(cursor);
+    const rows = await api(q);
+    rows.forEach(r => { if (applyRemote(r)) changed = true; });
+    first = false;
+    if (rows.length) { cursor = rows[rows.length - 1].server_at; sync.lastServerAt = cursor; }
+    if (rows.length < 1000) break;
+  }
+  return changed;
+}
+function applyRemote(r) {
+  if (!TABELAS.includes(r.tipo)) return false;
+  const k = r.tipo + ':' + r.id, ob = sync.outbox[k], sh = sync.shadow[k];
+  if (ob && ob.updated_at > r.updated_at) return false;    // a versão deste aparelho é mais nova: será enviada
+  if (ob) delete sync.outbox[k];
+  const arr = db[r.tipo], idx = arr.findIndex(x => x.id === r.id);
+  if (r.deleted) { delete sync.shadow[k]; if (idx >= 0) { arr.splice(idx, 1); return true; } return false; }
+  const h = stableStr(r.dados);
+  if (sh && sh.h === h && idx >= 0) { sh.u = r.updated_at; return false; }
+  if (idx >= 0) arr[idx] = r.dados; else arr.push(r.dados);
+  sync.shadow[k] = { h, u: r.updated_at };
+  return true;
+}
+const pendentes = () => Object.keys(sync.outbox).length;
+function updateSyncUI() {
+  const el = $('#syncBtn'); if (!el) return;
+  const n = pendentes();
+  const st = syncState === 'syncing' ? ['bg-blue-300 animate-pulse', 'Sincronizando…']
+    : syncState === 'offline' ? ['bg-amber-400', n ? `Offline · ${n} pendente${n > 1 ? 's' : ''}` : 'Offline']
+    : syncState === 'error' ? ['bg-red-400', 'Erro ao sincronizar']
+    : syncState === 'auth' ? ['bg-red-400', 'Entre novamente']
+    : n ? ['bg-amber-400', `${n} pendente${n > 1 ? 's' : ''}`]
+    : ['bg-emerald-400', 'Sincronizado'];
+  el.innerHTML = `<span class="w-2 h-2 rounded-full ${st[0]}"></span><span class="hidden sm:inline">${st[1]}</span>${n ? `<span class="sm:hidden">${n}</span>` : ''}`;
+  el.title = st[1] + (sync.lastOk ? ` · última sincronização ${new Date(sync.lastOk).toLocaleString('pt-BR')}` : '') + (syncErr ? ` · ${syncErr}` : '') + ' · clique para sincronizar agora';
+}
+
+/* ---------- Login ---------- */
+let loginMode = 'entrar';
+function showLogin(msg = '', email = '') {
+  $('#login').classList.remove('hidden');
+  setLoginMode('entrar');
+  $('#loginMsg').innerHTML = msg ? `<div class="rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm p-3">${esc(msg)}</div>` : '';
+  if (email) $('#formLogin').email.value = email;
+  setTimeout(() => (email ? $('#formLogin').senha : $('#formLogin').email).focus(), 50);
+}
+function hideLogin() { $('#login').classList.add('hidden'); }
+function setLoginMode(m) {
+  loginMode = m;
+  $('#loginTitle').textContent = m === 'entrar' ? 'Entrar' : 'Criar conta';
+  $('#loginSubmit').textContent = m === 'entrar' ? 'Entrar' : 'Criar conta';
+  $('#loginToggle').innerHTML = m === 'entrar' ? 'Primeiro acesso? <b>Criar conta</b>' : 'Já tem conta? <b>Entrar</b>';
+  $('#formLogin').senha.autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
+}
+function traduzErro(e) {
+  if (!e.status) return 'Sem conexão com a internet. O primeiro acesso em cada aparelho precisa de internet.';
+  const c = (e.code || '') + ' ' + e.message;
+  if (/invalid_credentials|Invalid login/i.test(c)) return 'E-mail ou senha incorretos.';
+  if (/email_not_confirmed|not confirmed/i.test(c)) return 'Confirme seu e-mail antes de entrar (veja a caixa de entrada e o spam).';
+  if (/already registered|user_already_exists/i.test(c)) return 'Este e-mail já tem conta. Use a opção Entrar.';
+  if (/weak_password|at least/i.test(c)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/rate limit|over_email_send_rate_limit|over_request_rate_limit/i.test(c)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+  if (/signup.*disabled|signup_disabled/i.test(c)) return 'Cadastro de novas contas está desativado.';
+  return 'Erro: ' + e.message;
+}
+async function submitLogin(e) {
+  e.preventDefault();
+  const f = e.target, email = f.email.value.trim().toLowerCase(), senha = f.senha.value;
+  const btn = $('#loginSubmit'); btn.disabled = true; btn.classList.add('opacity-60');
+  $('#loginMsg').innerHTML = '';
+  const erro = m => $('#loginMsg').innerHTML = `<div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm p-3">${esc(m)}</div>`;
+  try {
+    if (loginMode === 'criar') {
+      const d = await api('/auth/v1/signup', { method: 'POST', body: { email, password: senha }, auth: false });
+      if (!d || !d.access_token) {
+        setLoginMode('entrar');
+        $('#loginMsg').innerHTML = `<div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm p-3">Conta criada. Enviamos um link de confirmação para <b>${esc(email)}</b>. Clique no link e depois entre aqui com sua senha.</div>`;
+        return;
+      }
+      setSession(d);
+    } else {
+      setSession(await api('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password: senha }, auth: false }));
+    }
+    f.senha.value = '';
+    syncState = 'idle';
+    await afterLogin();
+  } catch (err) { erro(traduzErro(err)); }
+  finally { btn.disabled = false; btn.classList.remove('opacity-60'); }
+}
+async function afterLogin() {
+  const hadLocal = loadLocal();
+  hideLogin();
+  $('#userEmail').textContent = session.user.email;
+  renderAll();
+  showTab(['clientes', 'vendas', 'visitas', 'agenda'].includes(currentTab) ? currentTab : 'clientes');
+  if (hadLocal) { syncNow(); return; }
+  // aparelho novo para esta conta: baixa tudo da nuvem
+  syncState = 'syncing'; updateSyncUI();
+  try {
+    await pull();
+    sync.lastOk = Date.now(); syncState = 'ok'; persist(); renderAll();
+    if (TABELAS.every(t => !db[t].length)) onboarding();
+  } catch (e) {
+    syncState = e.status ? 'error' : 'offline'; syncErr = e.message;
+    toast('Não foi possível baixar seus dados agora. Tente de novo com internet.', 'error');
+  }
+  updateSyncUI();
+}
+function onboarding() {
+  let antigo = null;
+  try { const o = JSON.parse(localStorage.getItem('crm_sergio_v1')); if (valid(o) && o.clientes.length) antigo = o; } catch (e) {}
+  openModal(`${modalHead('Sua conta ainda não tem dados', 'Como você quer começar?')}
+    <div class="p-5 space-y-3">
+      ${antigo ? `<button id="obAntigo" class="w-full text-left rounded-xl border-2 border-emerald-500 bg-emerald-50 p-4 hover:bg-emerald-100">
+        <p class="font-bold text-emerald-800">Trazer os dados que já estão neste aparelho</p>
+        <p class="text-sm text-emerald-700">${antigo.clientes.length} clientes, ${antigo.vendas.length} vendas, ${antigo.visitas.length} atendimentos e ${antigo.agenda.length} agendamentos da versão anterior.</p></button>` : ''}
+      <button id="obVazio" class="w-full text-left rounded-xl border border-slate-300 p-4 hover:bg-slate-50">
+        <p class="font-bold text-slate-800">Começar com a base vazia</p><p class="text-sm text-slate-500">Para cadastrar os clientes reais.</p></button>
+      <button id="obDemo" class="w-full text-left rounded-xl border border-slate-300 p-4 hover:bg-slate-50">
+        <p class="font-bold text-slate-800">Carregar dados de exemplo</p><p class="text-sm text-slate-500">Para testar. Dá para apagar depois com Backup → importar ou excluindo os registros.</p></button>
+    </div>`);
+  const start = (d, msg) => { db = d; save(); renderAll(); closeModal(); toast(msg); };
+  if (antigo) $('#obAntigo').onclick = () => start({ ...emptyDB(), ...antigo, versao: 2 }, 'Dados enviados para a nuvem.');
+  $('#obVazio').onclick = () => { closeModal(); toast('Base vazia pronta. Comece cadastrando um cliente.'); };
+  $('#obDemo').onclick = () => start(seed(), 'Dados de exemplo carregados.');
+}
+async function logout() {
+  if (pendentes() && navigator.onLine) await syncNow();
+  const n = pendentes();
+  confirmBox('Sair da conta', n
+    ? `<b>${n} alteração(ões) ainda não foram enviadas</b> para a nuvem (sem internet?). Se sair agora, elas serão perdidas.`
+    : 'Os dados deste aparelho serão apagados do navegador. Tudo continua salvo na nuvem e volta quando você entrar de novo.',
+    n ? 'Sair mesmo assim' : 'Sair', async () => {
+      try { if (navigator.onLine) await api('/auth/v1/logout', { method: 'POST', retry: false }); } catch (e) {}
+      try { localStorage.removeItem(storeKey(session.user.id)); localStorage.removeItem(SESSION_KEY); } catch (e) {}
+      location.reload();
+    });
+}
+function loadUI() { try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch (e) { return {}; } }
+function saveUI() { try { localStorage.setItem(UI_KEY, JSON.stringify({ tab: currentTab })); } catch (e) {} }
+
+/* ---------- Dados fictícios ---------- */
+function seed() {
+  const t = new Date();
+  const d = n => toISO(addDays(t, n));
+  const ws = mondayOf(t);
+  const wd = n => toISO(addDays(ws, n));
+  const tISO = toISO(t);
+
+  const clientes = [
+    { id: 'c1', nome: 'Fazenda Santa Luzia', doc: '12.345.678/0001-90', telefone: '(69) 99912-3456', cidade: 'Vilhena - RO', perfil: 'Pecuária de Corte', abcManual: '', obs: 'Rebanho de ~1.800 cabeças em recria e engorda. Decisor: Sr. Antônio (proprietário).' },
+    { id: 'c2', nome: 'Cooperativa Vale do Guaporé', doc: '23.456.789/0001-01', telefone: '(69) 3321-4455', cidade: 'Colorado do Oeste - RO', perfil: 'Revenda / Cooperativa', abcManual: '', obs: 'Pedido mensal recorrente. Comprador: Juliana.' },
+    { id: 'c3', nome: 'João Batista Moreira', doc: '123.456.789-09', telefone: '(69) 98455-1020', cidade: 'Cerejeiras - RO', perfil: 'Agricultura de Grãos', abcManual: '', obs: '650 ha de soja + milho safrinha.' },
+    { id: 'c4', nome: 'Agrícola Três Marias Ltda', doc: '34.567.890/0001-12', telefone: '(69) 99301-7788', cidade: 'Chupinguaia - RO', perfil: 'Agricultura de Grãos', abcManual: '', obs: '2.100 ha. Compra semente e defensivo por safra.' },
+    { id: 'c5', nome: 'Rancho Dois Irmãos', doc: '987.654.321-00', telefone: '(69) 98122-3344', cidade: 'Pimenta Bueno - RO', perfil: 'Pecuária de Leite', abcManual: '', obs: '90 vacas em lactação. Ordenha mecânica.' },
+    { id: 'c6', nome: 'Sítio Boa Esperança', doc: '456.789.123-45', telefone: '(69) 99788-6655', cidade: 'Vilhena - RO', perfil: 'Hortifruti', abcManual: '', obs: 'Fornece para feira e supermercados locais.' },
+    { id: 'c7', nome: 'Maria Aparecida Souza', doc: '321.654.987-11', telefone: '(69) 98877-2211', cidade: 'Cacoal - RO', perfil: 'Cafeicultura', abcManual: 'B', obs: 'Café robusta amazônico, 40 ha. Classificada B manualmente: alto potencial de expansão.' },
+    { id: 'c8', nome: 'Granja Primavera', doc: '45.678.901/0001-23', telefone: '(69) 99655-4433', cidade: 'Cabixi - RO', perfil: 'Avicultura / Suinocultura', abcManual: '', obs: '3 galpões de frango de corte.' },
+    { id: 'c9', nome: 'Pedro Henrique Lima', doc: '741.852.963-00', telefone: '(69) 98411-9090', cidade: 'Corumbiara - RO', perfil: 'Pecuária de Corte', abcManual: '', obs: 'Prospect — comprou fazenda recentemente.' }
+  ];
+
+  const vendas = [
+    ['c2', -84, 'Arame farpado 500m', 50, 389], ['c2', -52, 'Sal mineral 30kg', 200, 125], ['c2', -21, 'Arame farpado 500m', 50, 389], ['c2', -6, 'Sal proteinado 30kg', 80, 139],
+    ['c4', -70, 'Semente de soja (sc 40kg)', 60, 420], ['c4', -33, 'Herbicida pós-emergente 20L', 32, 310],
+    ['c1', -60, 'Vacina aftosa (frasco 50 doses)', 60, 95], ['c1', -45, 'Sal mineral 30kg', 90, 128.9], ['c1', -14, 'Sal mineral 30kg', 60, 128.9], ['c1', -14, 'Ivermectina 1% 500ml', 55, 89.9],
+    ['c5', -40, 'Ração vaca leiteira 22% PB 40kg', 60, 98.5], ['c5', -10, 'Ração vaca leiteira 22% PB 40kg', 60, 98.5], ['c5', -10, 'Detergente para ordenha 5L', 40, 79.9],
+    ['c3', -55, 'Adubo NPK 20-05-20 (sc 50kg)', 33, 189], ['c3', -5, 'Glifosato 20L', 20, 289.9],
+    ['c8', -25, 'Ração frango corte 40kg', 30, 112],
+    ['c6', -30, 'Sementes de hortaliças (kit)', 15, 45], ['c6', -18, 'Adubo orgânico 25kg', 20, 62],
+    ['c7', -12, 'Fungicida cúprico 1L', 8, 149]
+  ].map(([c, dd, p, q, u], i) => ({ id: 'v' + i, clienteId: c, data: d(dd), produto: p, qtd: q, valorUnit: u }));
+
+  const visitas = [
+    ['c1', -2, '08:30', 'Presencial', 'Pasto em transição para o período seco, oferta de forragem baixa. Consumo de sal mineral no cocho abaixo do ideal.', 'Enviar proposta de sal proteinado e agendar retorno.'],
+    ['c2', -5, '10:00', 'Ligação', 'Comprador confirmou demanda de arame farpado para dezembro.', 'Fechar tabela de preços até sexta-feira.'],
+    ['c3', -7, '14:00', 'Presencial', 'Soja em V4 com presença de buva nas bordaduras.', 'Recomendar herbicida pós-emergente e retornar em 10 dias.'],
+    ['c4', -10, '09:00', 'WhatsApp', 'Pediu cotação de semente de milho para a safrinha.', 'Enviar cotação de 3 híbridos.'],
+    ['c5', -12, '16:00', 'Presencial', 'Produção caiu de 18 para 15 L/vaca/dia. Ração atual com baixo teor de proteína.', 'Testar ração 22% PB por 30 dias e medir produção.'],
+    ['c7', -15, '11:20', 'WhatsApp', 'Fotos indicam ferrugem nas folhas do terço inferior do cafezal.', 'Visita presencial para diagnóstico.'],
+    ['c6', -20, '15:00', 'Ligação', 'Interesse em irrigação por gotejamento para 2 ha.', 'Levantar orçamento com fornecedor.'],
+    ['c8', -26, '08:00', 'Presencial', 'Lote novo alojado. Conversão alimentar dentro da meta.', 'Acompanhar próximo lote.'],
+    ['c1', -40, '09:30', 'Presencial', 'Calendário de vacinação revisado com o gerente da fazenda.', 'Programar entrega das vacinas.']
+  ].map(([c, dd, h, tipo, resumo, prox], i) => ({ id: 'vs' + i, clienteId: c, dataHora: `${d(dd)}T${h}`, tipo, resumo, proximos: prox, agendaId: null }));
+
+  const ag = (id, c, data, hora, objetivo, forcePend) => ({ id, clienteId: c, data, hora, objetivo, status: (!forcePend && data < tISO) ? 'concluida' : 'pendente', visitaId: null });
+  const agenda = [
+    ag('a1', 'c1', wd(0), '08:00', 'Apresentar proposta de sal proteinado para a seca'),
+    ag('a2', 'c6', wd(0), '14:30', 'Levar orçamento da irrigação por gotejamento', true),
+    ag('a3', 'c3', wd(1), '09:00', 'Retorno: avaliar controle da buva'),
+    ag('a4', 'c5', wd(2), '10:00', 'Medir resultado da ração 22% PB'),
+    ag('a5', 'c2', wd(2), '15:00', 'Negociar pedido mensal de arame e sal'),
+    ag('a6', 'c4', wd(3), '08:30', 'Entregar cotação de híbridos de milho'),
+    ag('a7', 'c7', wd(4), '09:00', 'Diagnóstico de ferrugem no cafezal'),
+    ag('a8', 'c9', wd(4), '16:00', 'Primeira visita — apresentação da empresa'),
+    ag('a9', 'c8', wd(5), '08:00', 'Acompanhamento do lote novo'),
+    ag('a10', 'c1', wd(8), '09:00', 'Fechar pedido de sal proteinado'),
+    ag('a11', 'c3', wd(9), '14:00', 'Planejamento da safrinha')
+  ];
+  return { clientes, vendas, visitas, agenda, versao: 1 };
+}
+
+/* ---------- Estado ---------- */
+let db = emptyDB();
+let S = {};
+let currentTab = loadUI().tab || 'clientes';
+let weekStart = mondayOf(new Date());
+
+/* ---------- Estatísticas / Curva ABC ---------- */
+function computeStats() {
+  const totals = {}, counts = {}, last = {};
+  db.vendas.forEach(v => {
+    const t = v.qtd * v.valorUnit;
+    totals[v.clienteId] = (totals[v.clienteId] || 0) + t;
+    counts[v.clienteId] = (counts[v.clienteId] || 0) + 1;
+    if (!last[v.clienteId] || v.data > last[v.clienteId]) last[v.clienteId] = v.data;
+  });
+  const grand = Object.values(totals).reduce((a, b) => a + b, 0);
+  const auto = {}; let cum = 0;
+  db.clientes.filter(c => totals[c.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).forEach(c => {
+    const share = grand ? cum / grand : 1;
+    auto[c.id] = share < 0.8 ? 'A' : share < 0.95 ? 'B' : 'C';
+    cum += totals[c.id];
+  });
+  db.clientes.forEach(c => { if (!auto[c.id]) auto[c.id] = 'C'; });
+  S = { totals, counts, last, grand, auto };
+}
+const curva = c => (c && (c.abcManual || S.auto[c.id])) || 'C';
+const cliById = id => db.clientes.find(c => c.id === id);
+const cliName = id => cliById(id)?.nome || '(cliente removido)';
+const CURVA_CLS = {
+  A: 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
+  B: 'bg-blue-100 text-blue-700 ring-blue-600/20',
+  C: 'bg-slate-200 text-slate-600 ring-slate-500/20'
+};
+const AVATAR_CLS = { A: 'bg-emerald-500 text-white', B: 'bg-blue-600 text-white', C: 'bg-slate-300 text-slate-700' };
+function badge(c, small) {
+  const k = curva(c);
+  const manual = c && c.abcManual ? '<span class="ml-1 opacity-70 font-normal" title="Definida manualmente">✎</span>' : '';
+  return `<span class="inline-flex items-center rounded-full ring-1 ring-inset ${CURVA_CLS[k]} ${small ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'} font-bold whitespace-nowrap">Curva ${k}${manual}</span>`;
+}
+function clienteOptions(sel, placeholder = 'Selecione o cliente...') {
+  return `<option value="">${placeholder}</option>` + [...db.clientes].sort((a, b) => a.nome.localeCompare(b.nome))
+    .map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nome)}</option>`).join('');
+}
+
+/* ---------- Render: Cards ---------- */
+function renderCards() {
+  const ws = toISO(mondayOf(new Date())), we = toISO(addDays(mondayOf(new Date()), 5));
+  const semana = db.agenda.filter(a => a.data >= ws && a.data <= we);
+  const pend = semana.filter(a => a.status === 'pendente').length;
+  const dist = { A: 0, B: 0, C: 0 };
+  db.clientes.forEach(c => dist[curva(c)]++);
+  const n = db.clientes.length || 1;
+  const card = (icon, iconCls, label, value, sub, valueCls = 'text-slate-800') => `
+    <div class="card p-4 sm:p-5 fade-in">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-xs sm:text-sm font-medium text-slate-500">${label}</p>
+        <span class="w-9 h-9 shrink-0 rounded-xl grid place-items-center ${iconCls}">${ic(icon, 'w-5 h-5')}</span>
+      </div>
+      <p class="mt-1 text-xl sm:text-2xl font-bold ${valueCls} truncate">${value}</p>
+      <div class="mt-1 text-xs text-slate-500">${sub}</div>
+    </div>`;
+  $('#cards').innerHTML =
+    card('users', 'bg-blue-100 text-blue-700', 'Total de Clientes', db.clientes.length, `${Object.keys(S.counts).length} com compras registradas`) +
+    card('dollar', 'bg-emerald-100 text-emerald-700', 'Vendas Totais', fmtBRL(S.grand), `${db.vendas.length} lançamentos · ticket médio ${fmtBRL(db.vendas.length ? S.grand / db.vendas.length : 0)}`, 'text-emerald-600') +
+    card('calendar', 'bg-blue-100 text-blue-700', 'Visitas na Semana', semana.length, `<span class="text-blue-700 font-semibold">${pend} pendentes</span> · <span class="text-emerald-700 font-semibold">${semana.length - pend} concluídas</span>`) +
+    `<div class="card p-4 sm:p-5 fade-in">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-xs sm:text-sm font-medium text-slate-500">Distribuição A/B/C</p>
+        <span class="w-9 h-9 shrink-0 rounded-xl grid place-items-center bg-slate-100 text-slate-600">${ic('pie')}</span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-3 text-lg sm:text-xl font-bold">
+        <span class="text-emerald-600">A ${dist.A}</span><span class="text-blue-600">B ${dist.B}</span><span class="text-slate-500">C ${dist.C}</span>
+      </div>
+      <div class="mt-2 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
+        <div class="bg-emerald-500" style="width:${dist.A / n * 100}%"></div><div class="bg-blue-600" style="width:${dist.B / n * 100}%"></div><div class="bg-slate-300" style="width:${dist.C / n * 100}%"></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- Render: Clientes ---------- */
+function renderClientes() {
+  const q = $('#cliBusca').value.trim().toLowerCase();
+  const fc = $('#cliFiltroCurva').value;
+  const list = db.clientes
+    .filter(c => !q || [c.nome, c.doc, c.cidade, c.perfil, c.telefone].join(' ').toLowerCase().includes(q))
+    .filter(c => !fc || curva(c) === fc)
+    .sort((a, b) => (S.totals[b.id] || 0) - (S.totals[a.id] || 0) || a.nome.localeCompare(b.nome));
+  $('#cliCount').textContent = `${list.length} de ${db.clientes.length} clientes · ordenados por faturamento`;
+  if (!list.length) {
+    $('#listaClientes').innerHTML = `<div class="p-10 text-center text-slate-400"><div class="mx-auto w-fit mb-2">${ic('users', 'w-10 h-10')}</div>${db.clientes.length ? 'Nenhum cliente encontrado para esse filtro.' : 'Nenhum cliente cadastrado ainda. Use o formulário ao lado.'}</div>`;
+    return;
+  }
+  $('#listaClientes').innerHTML = list.map(c => {
+    const k = curva(c), wa = waLink(c.telefone);
+    return `
+    <div class="p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-slate-50 transition fade-in">
+      <button data-action="ficha" data-id="${c.id}" class="flex items-center gap-3 flex-1 min-w-0 text-left group">
+        <div class="w-11 h-11 shrink-0 rounded-full grid place-items-center font-bold text-sm ${AVATAR_CLS[k]}">${esc(initials(c.nome))}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-slate-800 truncate group-hover:text-blue-700">${esc(c.nome)}</p>
+          <p class="text-xs text-slate-500 truncate">${esc(c.cidade || 'Sem cidade')} · ${esc(c.perfil || '')}</p>
+          <p class="text-[11px] text-slate-400 truncate">${esc(c.doc || 'Sem documento')}${c.telefone ? ' · ' + esc(c.telefone) : ''}</p>
+        </div>
+      </button>
+      <div class="flex items-center gap-3 justify-between sm:justify-end">
+        <div class="text-left sm:text-right">
+          <p class="text-sm font-bold text-emerald-700">${fmtBRL(S.totals[c.id])}</p>
+          <p class="text-[11px] text-slate-500">${S.counts[c.id] || 0} compras</p>
+        </div>
+        ${badge(c)}
+        <div class="flex items-center">
+          ${wa ? `<a href="${wa}" target="_blank" rel="noopener" class="icon-btn hover:text-green-600" title="Abrir WhatsApp">${ic('msg', 'w-4 h-4')}</a>` : ''}
+          <button class="icon-btn" data-action="ficha" data-id="${c.id}" title="Ver ficha">${ic('eye', 'w-4 h-4')}</button>
+          <button class="icon-btn" data-action="editCliente" data-id="${c.id}" title="Editar">${ic('edit', 'w-4 h-4')}</button>
+          <button class="icon-btn-danger" data-action="delCliente" data-id="${c.id}" title="Excluir">${ic('trash', 'w-4 h-4')}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Render: Vendas ---------- */
+function renderVendas() {
+  const f = $('#vendaFiltro').value;
+  const list = db.vendas.filter(v => !f || v.clienteId === f).sort((a, b) => b.data.localeCompare(a.data));
+  const total = list.reduce((s, v) => s + v.qtd * v.valorUnit, 0);
+  const chip = (l, v, cls = 'text-slate-800') => `<div class="chip"><p class="text-[11px] uppercase tracking-wide font-semibold text-slate-500">${l}</p><p class="text-base sm:text-lg font-bold ${cls}">${v}</p></div>`;
+  $('#vendaResumo').innerHTML = chip('Total acumulado', fmtBRL(total), 'text-emerald-600') + chip('Lançamentos', list.length) + chip('Ticket médio', fmtBRL(list.length ? total / list.length : 0), 'text-blue-700');
+
+  $('#tbVendas').innerHTML = list.length ? list.map(v => {
+    const c = cliById(v.clienteId);
+    return `<tr class="hover:bg-slate-50">
+      <td class="td">${fmtDate(v.data)}</td>
+      <td class="td"><button data-action="ficha" data-id="${v.clienteId}" class="font-medium text-slate-800 hover:text-blue-700 mr-1">${esc(cliName(v.clienteId))}</button>${c ? badge(c, true) : ''}</td>
+      <td class="td">${esc(v.produto)}</td>
+      <td class="td text-right">${fmtNum(v.qtd)}</td>
+      <td class="td text-right">${fmtBRL(v.valorUnit)}</td>
+      <td class="td text-right font-semibold text-emerald-700">${fmtBRL(v.qtd * v.valorUnit)}</td>
+      <td class="td text-right"><button class="icon-btn-danger" data-action="delVenda" data-id="${v.id}" title="Excluir venda">${ic('trash', 'w-4 h-4')}</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="p-8 text-center text-sm text-slate-400">Nenhuma venda registrada${f ? ' para este cliente' : ''}.</td></tr>`;
+
+  const ranking = db.clientes.filter(c => S.counts[c.id]).sort((a, b) => S.totals[b.id] - S.totals[a.id]);
+  $('#tbResumoCli').innerHTML = ranking.length ? ranking.map(c => `
+    <tr class="hover:bg-slate-50">
+      <td class="td"><button data-action="ficha" data-id="${c.id}" class="font-medium text-slate-800 hover:text-blue-700">${esc(c.nome)}</button></td>
+      <td class="td">${badge(c, true)}</td>
+      <td class="td text-right">${S.counts[c.id]}</td>
+      <td class="td text-right font-semibold text-emerald-700">${fmtBRL(S.totals[c.id])}</td>
+      <td class="td text-right">${fmtBRL(S.totals[c.id] / S.counts[c.id])}</td>
+      <td class="td text-right">${S.grand ? (S.totals[c.id] / S.grand * 100).toFixed(1).replace('.', ',') : '0'}%</td>
+      <td class="td">${fmtDate(S.last[c.id])}</td>
+    </tr>`).join('') : `<tr><td colspan="7" class="p-8 text-center text-sm text-slate-400">Sem dados ainda.</td></tr>`;
+
+  $('#listaProdutos').innerHTML = [...new Set(db.vendas.map(v => v.produto))].sort().map(p => `<option value="${esc(p)}">`).join('');
+}
+
+/* ---------- Render: Visitas ---------- */
+function timelineHTML(list, showClient = true) {
+  if (!list.length) return `<div class="py-8 text-center text-sm text-slate-400"><div class="mx-auto w-fit mb-2">${ic('clipboard', 'w-9 h-9')}</div>Nenhum atendimento registrado.</div>`;
+  return `<ol class="relative ml-3 border-l-2 border-blue-100 space-y-6">` + list.map(v => {
+    const t = TIPOS[v.tipo] || TIPOS['Presencial'];
+    return `<li class="relative pl-7 fade-in">
+      <span class="absolute -left-[14px] top-0 w-[26px] h-[26px] rounded-full ${t.dot} text-white grid place-items-center ring-4 ring-white">${ic(t.icon, 'w-3.5 h-3.5')}</span>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span class="text-xs font-semibold text-slate-500">${fmtDT(v.dataHora)}</span>
+        <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 ${t.txt}">${esc(v.tipo)}</span>
+        ${v.agendaId ? `<span class="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-blue-50 text-blue-700">via agenda</span>` : ''}
+        <button class="icon-btn-danger ml-auto !w-7 !h-7" data-action="delVisita" data-id="${v.id}" title="Excluir registro">${ic('trash', 'w-3.5 h-3.5')}</button>
+      </div>
+      ${showClient ? `<button data-action="ficha" data-id="${v.clienteId}" class="mt-0.5 font-semibold text-slate-800 hover:text-blue-700">${esc(cliName(v.clienteId))}</button>` : ''}
+      <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm space-y-2">
+        <div><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Resumo / Diagnóstico</p><p class="text-slate-700 whitespace-pre-line">${esc(v.resumo)}</p></div>
+        ${v.proximos ? `<div class="border-t border-slate-200 pt-2"><p class="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Próximos passos</p><p class="text-slate-700 whitespace-pre-line">${esc(v.proximos)}</p></div>` : ''}
+      </div>
+    </li>`;
+  }).join('') + `</ol>`;
+}
+function renderVisitas() {
+  const fc = $('#visFiltroCli').value, ft = $('#visFiltroTipo').value;
+  const list = db.visitas.filter(v => (!fc || v.clienteId === fc) && (!ft || v.tipo === ft)).sort((a, b) => b.dataHora.localeCompare(a.dataHora));
+  $('#visCount').textContent = `${list.length} atendimento(s)`;
+  $('#listaVisitas').innerHTML = timelineHTML(list);
+}
+
+/* ---------- Render: Agenda ---------- */
+function renderAgenda() {
+  const end = addDays(weekStart, 5);
+  const isCurrent = toISO(weekStart) === toISO(mondayOf(new Date()));
+  $('#semanaLabel').textContent = `${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${end.toLocaleDateString('pt-BR')}${isCurrent ? ' · semana atual' : ''}`;
+  const hoje = todayISO();
+  $('#gradeAgenda').innerHTML = DIAS.map((nome, i) => {
+    const dia = addDays(weekStart, i), iso = toISO(dia), isToday = iso === hoje;
+    const items = db.agenda.filter(a => a.data === iso).sort((a, b) => a.hora.localeCompare(b.hora));
+    return `<div class="card flex flex-col min-h-[180px] ${isToday ? 'ring-2 ring-blue-500 border-blue-500' : ''}">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between ${isToday ? 'bg-blue-50 rounded-t-2xl' : ''}">
+        <div>
+          <p class="text-sm font-bold ${isToday ? 'text-blue-800' : 'text-slate-800'}">${nome}${isToday ? ' <span class="ml-1 text-[10px] uppercase bg-blue-600 text-white px-1.5 py-0.5 rounded">hoje</span>' : ''}</p>
+          <p class="text-xs text-slate-500">${dia.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
+        </div>
+        <button class="icon-btn" data-action="novaAgenda" data-date="${iso}" title="Agendar neste dia">${ic('plus', 'w-4 h-4')}</button>
+      </div>
+      <div class="p-3 space-y-2 flex-1">
+        ${items.length ? items.map(a => {
+          const c = cliById(a.clienteId), done = a.status === 'concluida', late = !done && a.data < hoje;
+          return `<div class="fade-in rounded-xl border-l-4 ${done ? 'border-emerald-500 bg-emerald-50/70' : 'border-blue-600 bg-blue-50/60'} p-2.5">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-bold ${done ? 'text-emerald-800' : 'text-blue-800'} flex items-center gap-1">${ic('clock', 'w-3.5 h-3.5')}${esc(a.hora)}</span>
+              <button class="text-slate-400 hover:text-red-600" data-action="delAgenda" data-id="${a.id}" title="Excluir agendamento">${ic('x', 'w-3.5 h-3.5')}</button>
+            </div>
+            <button data-action="ficha" data-id="${a.clienteId}" class="mt-0.5 block text-left text-sm font-semibold leading-tight ${done ? 'text-slate-600' : 'text-slate-800'} hover:text-blue-700">${esc(cliName(a.clienteId))}</button>
+            ${c ? `<p class="text-[11px] text-slate-500">${esc(c.cidade || '')}</p>` : ''}
+            ${a.objetivo ? `<p class="mt-1 text-xs text-slate-600 leading-snug">${esc(a.objetivo)}</p>` : ''}
+            <div class="mt-2 flex flex-wrap items-center gap-1">
+              <button data-action="toggleAgenda" data-id="${a.id}" class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition ${done ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-blue-700 ring-1 ring-blue-600 hover:bg-blue-600 hover:text-white'}" title="Alternar status">
+                ${ic(done ? 'check' : 'clock', 'w-3 h-3')}${done ? 'Concluída' : 'Pendente'}
+              </button>
+              ${late ? `<span class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">${ic('alert', 'w-3 h-3')}atrasada</span>` : ''}
+              ${done && !a.visitaId ? `<button data-action="registrarDaAgenda" data-id="${a.id}" class="text-[11px] font-semibold text-blue-700 hover:underline">+ histórico</button>` : ''}
+            </div>
+          </div>`;
+        }).join('') : `<p class="text-xs text-slate-400 text-center py-6">Sem visitas</p>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Render geral ---------- */
+function fillSelects() {
+  $$('select[data-cli]').forEach(s => { const v = s.value; s.innerHTML = clienteOptions(v); s.value = cliById(v) ? v : ''; });
+  [['#vendaFiltro', 'Todos os clientes'], ['#visFiltroCli', 'Todos os clientes']].forEach(([sel, ph]) => {
+    const s = $(sel), v = s.value; s.innerHTML = clienteOptions(v, ph); s.value = cliById(v) ? v : '';
+  });
+}
+function renderAll() {
+  computeStats();
+  fillSelects();
+  renderCards(); renderClientes(); renderVendas(); renderVisitas(); renderAgenda();
+}
+function showTab(tab) {
+  currentTab = tab; saveUI();
+  $$('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tab));
+  $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+}
+
+/* ---------- Modal / Toast / Confirm ---------- */
+function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+function closeModal() { $('#modal').classList.add('hidden'); $('#modalBox').innerHTML = ''; document.body.style.overflow = ''; }
+const modalHead = (title, sub = '') => `<div class="sticky top-0 bg-white/95 backdrop-blur px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3 rounded-t-2xl z-10">
+  <div><h3 class="text-lg font-bold text-slate-800">${title}</h3>${sub ? `<p class="text-sm text-slate-500">${sub}</p>` : ''}</div>
+  <button class="icon-btn" data-action="closeModal" title="Fechar">${ic('x')}</button></div>`;
+function toast(msg, type = 'success') {
+  const cls = type === 'error' ? 'bg-red-600' : type === 'info' ? 'bg-blue-700' : 'bg-emerald-600';
+  const el = document.createElement('div');
+  el.className = `pointer-events-auto fade-in ${cls} text-white text-sm font-medium rounded-xl shadow-lg px-4 py-3 flex items-center gap-2 max-w-sm`;
+  el.innerHTML = `${ic(type === 'error' ? 'alert' : 'check', 'w-4 h-4 shrink-0')}<span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+function confirmBox(title, msg, okLabel, onOk) {
+  openModal(`${modalHead(title)}<div class="p-5 space-y-5"><p class="text-sm text-slate-600 leading-relaxed">${msg}</p>
+    <div class="flex justify-end gap-2"><button class="btn-ghost" data-action="closeModal">Cancelar</button>
+    <button id="cfmOk" class="btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500">${okLabel}</button></div></div>`);
+  $('#cfmOk').onclick = () => { closeModal(); onOk(); };
+}
+
+/* ---------- Formulário de visita (reutilizável) ---------- */
+function visitaFields(pre = {}) {
+  const tipoSel = pre.tipo || 'Presencial';
+  return `
+  <div><label class="label">Cliente *</label><select name="clienteId" data-cli class="input" required>${clienteOptions(pre.clienteId)}</select></div>
+  <div><label class="label">Data / Hora *</label><input type="datetime-local" name="dataHora" class="input" required value="${pre.dataHora || nowLocal()}"></div>
+  <div><label class="label">Tipo de contato</label>
+    <div class="grid grid-cols-3 gap-2">${Object.keys(TIPOS).map(t => `
+      <label class="cursor-pointer">
+        <input type="radio" name="tipo" value="${t}" class="peer sr-only" ${t === tipoSel ? 'checked' : ''}>
+        <span class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-2 py-2 text-xs font-semibold text-slate-600 transition peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:border-blue-400">${ic(TIPOS[t].icon, 'w-4 h-4')}${t}</span>
+      </label>`).join('')}
+    </div>
+  </div>
+  <div><label class="label">Resumo / Diagnóstico *</label><textarea name="resumo" rows="3" class="input" required placeholder="O que foi observado, conversado, problema identificado...">${esc(pre.resumo || '')}</textarea></div>
+  <div><label class="label">Próximos passos</label><textarea name="proximos" rows="2" class="input" placeholder="Proposta, retorno, amostra, cotação...">${esc(pre.proximos || '')}</textarea></div>`;
+}
+function saveVisita(form, agendaId = null) {
+  const o = Object.fromEntries(new FormData(form));
+  if (!o.clienteId) { toast('Selecione o cliente.', 'error'); return false; }
+  if (!o.dataHora) { toast('Informe data e hora.', 'error'); return false; }
+  if (!o.resumo || !o.resumo.trim()) { toast('Preencha o resumo / diagnóstico.', 'error'); return false; }
+  const v = { id: uid(), clienteId: o.clienteId, dataHora: o.dataHora, tipo: o.tipo || 'Presencial', resumo: o.resumo.trim(), proximos: (o.proximos || '').trim(), agendaId };
+  db.visitas.push(v);
+  if (agendaId) { const a = db.agenda.find(x => x.id === agendaId); if (a) a.visitaId = v.id; }
+  save(); renderAll(); toast('Atendimento registrado.');
+  return true;
+}
+function openVisitaModal(pre = {}, agendaId = null, title = 'Registrar atendimento', sub = '') {
+  openModal(`${modalHead(title, sub)}
+    <form id="formVisitaModal" class="p-5 space-y-3" autocomplete="off">${visitaFields(pre)}
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" class="btn-ghost" data-action="closeModal">${agendaId ? 'Agora não' : 'Cancelar'}</button>
+        <button type="submit" class="btn-primary">${ic('check', 'w-4 h-4')}Salvar histórico</button>
+      </div>
+    </form>`);
+  $('#formVisitaModal').onsubmit = e => { e.preventDefault(); if (saveVisita(e.target, agendaId)) closeModal(); };
+  setTimeout(() => $('#formVisitaModal [name=resumo]')?.focus(), 50);
+}
+
+/* ---------- Agenda: modal ---------- */
+function openAgendaModal(pre = {}) {
+  openModal(`${modalHead('Agendar visita', 'Segunda a sábado')}
+    <form id="formAgenda" class="p-5 space-y-3" autocomplete="off">
+      <div><label class="label">Cliente *</label><select name="clienteId" data-cli class="input" required>${clienteOptions(pre.clienteId)}</select></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="label">Data *</label><input type="date" name="data" class="input" required value="${pre.data || todayISO()}"></div>
+        <div><label class="label">Hora *</label><input type="time" name="hora" class="input" required value="${pre.hora || '08:00'}"></div>
+      </div>
+      <div><label class="label">Objetivo da visita</label><textarea name="objetivo" rows="2" class="input" placeholder="Ex.: apresentar proposta, diagnóstico de lavoura..."></textarea></div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" class="btn-ghost" data-action="closeModal">Cancelar</button>
+        <button type="submit" class="btn-secondary">${ic('calendar', 'w-4 h-4')}Agendar</button>
+      </div>
+    </form>`);
+  $('#formAgenda').onsubmit = e => {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(e.target));
+    if (!o.clienteId) return toast('Selecione o cliente.', 'error');
+    if (parseISO(o.data).getDay() === 0) return toast('A agenda vai de segunda a sábado. Escolha outra data.', 'error');
+    db.agenda.push({ id: uid(), clienteId: o.clienteId, data: o.data, hora: o.hora, objetivo: (o.objetivo || '').trim(), status: 'pendente', visitaId: null });
+    save(); weekStart = mondayOf(parseISO(o.data)); renderAll(); closeModal(); showTab('agenda');
+    toast('Visita agendada.');
+  };
+}
+function toggleAgenda(id) {
+  const a = db.agenda.find(x => x.id === id); if (!a) return;
+  if (a.status === 'pendente') {
+    a.status = 'concluida'; save(); renderAll();
+    toast('Visita concluída. Registre o histórico.', 'info');
+    if (!a.visitaId) openVisitaModal({ clienteId: a.clienteId, dataHora: `${a.data}T${a.hora}`, tipo: 'Presencial' }, a.id, 'Visita concluída — registrar histórico', esc(cliName(a.clienteId)) + (a.objetivo ? ' · ' + esc(a.objetivo) : ''));
+  } else {
+    a.status = 'pendente'; save(); renderAll(); toast('Status voltou para pendente.', 'info');
+  }
+}
+
+/* ---------- Ficha do cliente ---------- */
+function openFicha(id) {
+  const c = cliById(id); if (!c) return;
+  const vendas = db.vendas.filter(v => v.clienteId === id).sort((a, b) => b.data.localeCompare(a.data));
+  const visitas = db.visitas.filter(v => v.clienteId === id).sort((a, b) => b.dataHora.localeCompare(a.dataHora));
+  const prox = db.agenda.filter(a => a.clienteId === id && a.status === 'pendente').sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora))[0];
+  const total = S.totals[id] || 0, n = S.counts[id] || 0, wa = waLink(c.telefone), k = curva(c);
+  const kpi = (l, v, cls = 'text-slate-800') => `<div class="chip"><p class="text-[10px] uppercase tracking-wide font-bold text-slate-500">${l}</p><p class="text-sm sm:text-base font-bold ${cls}">${v}</p></div>`;
+  openModal(`
+    <div class="sticky top-0 z-10 bg-gradient-to-r from-blue-800 to-blue-600 text-white px-5 py-4 rounded-t-2xl">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-12 shrink-0 rounded-full grid place-items-center font-bold ${AVATAR_CLS[k]} ring-2 ring-white/60">${esc(initials(c.nome))}</div>
+          <div class="min-w-0"><h3 class="text-lg font-bold leading-tight truncate">${esc(c.nome)}</h3>
+            <p class="text-xs text-blue-100 truncate">${esc(c.perfil || '')} · ${esc(c.cidade || '')}</p></div>
+        </div>
+        <button class="p-1.5 rounded-lg hover:bg-white/10" data-action="closeModal" title="Fechar">${ic('x')}</button>
+      </div>
+    </div>
+    <div class="p-5 space-y-5">
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        ${badge(c)}
+        ${c.doc ? `<span class="text-slate-600">${esc(c.doc)}</span>` : ''}
+        ${c.telefone ? `<span class="text-slate-600 inline-flex items-center gap-1">${ic('phone', 'w-3.5 h-3.5')}${esc(c.telefone)}</span>` : ''}
+        ${wa ? `<a href="${wa}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-full bg-green-500 text-white px-3 py-1 text-xs font-semibold hover:bg-green-600">${ic('msg', 'w-3.5 h-3.5')}WhatsApp</a>` : ''}
+      </div>
+      ${c.obs ? `<p class="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3">${esc(c.obs)}</p>` : ''}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        ${kpi('Total comprado', fmtBRL(total), 'text-emerald-600')}${kpi('Compras', n)}${kpi('Ticket médio', fmtBRL(n ? total / n : 0), 'text-blue-700')}${kpi('Última compra', fmtDate(S.last[id]))}
+      </div>
+      ${prox ? `<div class="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm flex items-center gap-2 text-blue-800">${ic('calendar', 'w-4 h-4 shrink-0')}<span><b>Próxima visita:</b> ${fmtDate(prox.data)} às ${esc(prox.hora)}${prox.objetivo ? ' — ' + esc(prox.objetivo) : ''}</span></div>` : ''}
+      <div class="grid grid-cols-3 gap-2">
+        <button class="btn-primary !px-2" data-action="novaVendaCli" data-id="${id}">${ic('cart', 'w-4 h-4')}<span class="hidden sm:inline">Nova</span> venda</button>
+        <button class="btn-secondary !px-2" data-action="novaVisitaCli" data-id="${id}">${ic('clipboard', 'w-4 h-4')}<span class="hidden sm:inline">Registrar</span> visita</button>
+        <button class="btn-ghost !px-2" data-action="novaAgendaCli" data-id="${id}">${ic('calendar', 'w-4 h-4')}Agendar</button>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">${ic('clipboard', 'w-4 h-4 text-blue-600')}Linha do tempo de atendimentos <span class="text-slate-400 font-normal">(${visitas.length})</span></h4>
+        ${timelineHTML(visitas, false)}
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">${ic('cart', 'w-4 h-4 text-emerald-600')}Histórico de compras <span class="text-slate-400 font-normal">(${vendas.length})</span></h4>
+        ${vendas.length ? `<div class="overflow-x-auto rounded-xl border border-slate-200"><table class="min-w-full">
+          <thead class="bg-slate-50"><tr><th class="th">Data</th><th class="th">Produto</th><th class="th text-right">Qtd</th><th class="th text-right">Unit.</th><th class="th text-right">Total</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">${vendas.map(v => `<tr><td class="td">${fmtDate(v.data)}</td><td class="td">${esc(v.produto)}</td><td class="td text-right">${fmtNum(v.qtd)}</td><td class="td text-right">${fmtBRL(v.valorUnit)}</td><td class="td text-right font-semibold text-emerald-700">${fmtBRL(v.qtd * v.valorUnit)}</td></tr>`).join('')}</tbody>
+          <tfoot class="bg-emerald-50"><tr><td class="td font-bold" colspan="4">Total acumulado</td><td class="td text-right font-bold text-emerald-700">${fmtBRL(total)}</td></tr></tfoot>
+        </table></div>` : `<p class="text-sm text-slate-400 text-center py-6">Nenhuma compra registrada.</p>`}
+      </div>
+    </div>`);
+}
+
+/* ---------- Clientes: form ---------- */
+function resetClienteForm() {
+  const f = $('#formCliente'); f.reset(); f.id.value = '';
+  $('#cliFormTitle').textContent = 'Novo cliente'; $('#cliSubmitLbl').textContent = 'Cadastrar cliente';
+  $('#cliCancel').classList.add('hidden');
+}
+function editCliente(id) {
+  const c = cliById(id); if (!c) return;
+  closeModal(); showTab('clientes');
+  const f = $('#formCliente');
+  ['id', 'nome', 'doc', 'telefone', 'cidade', 'perfil', 'abcManual', 'obs'].forEach(k => f[k].value = c[k] || '');
+  $('#cliFormTitle').textContent = 'Editar cliente'; $('#cliSubmitLbl').textContent = 'Salvar alterações';
+  $('#cliCancel').classList.remove('hidden');
+  $('#boxFormCliente').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  f.nome.focus();
+}
+function delCliente(id) {
+  const c = cliById(id); if (!c) return;
+  const nv = db.vendas.filter(v => v.clienteId === id).length, nvs = db.visitas.filter(v => v.clienteId === id).length, na = db.agenda.filter(a => a.clienteId === id).length;
+  confirmBox('Excluir cliente', `Excluir <b>${esc(c.nome)}</b>? Também serão apagados ${nv} venda(s), ${nvs} atendimento(s) e ${na} agendamento(s). Não dá para desfazer (a não ser por um backup).`, 'Excluir tudo', () => {
+    db.clientes = db.clientes.filter(x => x.id !== id);
+    db.vendas = db.vendas.filter(x => x.clienteId !== id);
+    db.visitas = db.visitas.filter(x => x.clienteId !== id);
+    db.agenda = db.agenda.filter(x => x.clienteId !== id);
+    save(); renderAll(); resetClienteForm(); toast('Cliente excluído.');
+  });
+}
+
+/* ---------- Eventos ---------- */
+function bindEvents() {
+  // Tabs
+  $$('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+  // Ações delegadas
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-action]'); if (!el) return;
+    const { action, id } = el.dataset;
+    switch (action) {
+      case 'closeModal': closeModal(); break;
+      case 'ficha': openFicha(id); break;
+      case 'editCliente': editCliente(id); break;
+      case 'delCliente': delCliente(id); break;
+      case 'delVenda': {
+        const v = db.vendas.find(x => x.id === id); if (!v) break;
+        confirmBox('Excluir venda', `Excluir a venda de <b>${esc(v.produto)}</b> (${fmtBRL(v.qtd * v.valorUnit)}) para ${esc(cliName(v.clienteId))}?`, 'Excluir', () => {
+          db.vendas = db.vendas.filter(x => x.id !== id); save(); renderAll(); toast('Venda excluída.');
+        }); break;
+      }
+      case 'delVisita':
+        confirmBox('Excluir atendimento', 'Excluir este registro de atendimento?', 'Excluir', () => {
+          db.visitas = db.visitas.filter(x => x.id !== id);
+          db.agenda.forEach(a => { if (a.visitaId === id) a.visitaId = null; });
+          save(); renderAll(); toast('Registro excluído.');
+        }); break;
+      case 'delAgenda':
+        confirmBox('Excluir agendamento', `Excluir a visita agendada para ${esc(cliName(db.agenda.find(a => a.id === id)?.clienteId))}?`, 'Excluir', () => {
+          db.agenda = db.agenda.filter(x => x.id !== id); save(); renderAll(); toast('Agendamento excluído.');
+        }); break;
+      case 'toggleAgenda': toggleAgenda(id); break;
+      case 'registrarDaAgenda': {
+        const a = db.agenda.find(x => x.id === id); if (!a) break;
+        openVisitaModal({ clienteId: a.clienteId, dataHora: `${a.data}T${a.hora}` }, a.id, 'Registrar histórico da visita', esc(cliName(a.clienteId))); break;
+      }
+      case 'novaAgenda': openAgendaModal({ data: el.dataset.date }); break;
+      case 'novaAgendaCli': openAgendaModal({ clienteId: id }); break;
+      case 'novaVisitaCli': openVisitaModal({ clienteId: id }); break;
+      case 'novaVendaCli':
+        closeModal(); showTab('vendas');
+        $('#formVenda').clienteId.value = id; $('#vendaFiltro').value = id; renderVendas();
+        $('#formVenda').produto.focus(); break;
+      case 'weekPrev': weekStart = addDays(weekStart, -7); renderAgenda(); break;
+      case 'weekNext': weekStart = addDays(weekStart, 7); renderAgenda(); break;
+      case 'weekToday': weekStart = mondayOf(new Date()); renderAgenda(); break;
+    }
+  });
+
+  // Fechar modal (fundo / ESC)
+  $('#modalWrap').addEventListener('click', e => { if (e.target.id === 'modalWrap') closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal(); });
+
+  // Clientes
+  const fc = $('#formCliente');
+  fc.doc.addEventListener('input', e => e.target.value = maskDoc(e.target.value));
+  fc.telefone.addEventListener('input', e => e.target.value = maskPhone(e.target.value));
+  fc.addEventListener('submit', e => {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(fc));
+    o.nome = o.nome.trim();
+    if (!o.nome) return toast('Informe o nome ou razão social.', 'error');
+    const docDigits = o.doc.replace(/\D/g, '');
+    if (docDigits && ![11, 14].includes(docDigits.length)) return toast('CPF deve ter 11 dígitos e CNPJ 14.', 'error');
+    if (docDigits && db.clientes.some(c => c.id !== o.id && (c.doc || '').replace(/\D/g, '') === docDigits)) return toast('Já existe um cliente com este CPF/CNPJ.', 'error');
+    const data = { nome: o.nome, doc: o.doc, telefone: o.telefone, cidade: o.cidade.trim(), perfil: o.perfil, abcManual: o.abcManual, obs: o.obs.trim() };
+    if (o.id) { Object.assign(cliById(o.id), data); toast('Cliente atualizado.'); }
+    else { db.clientes.push({ id: uid(), ...data }); toast('Cliente cadastrado.'); }
+    save(); resetClienteForm(); renderAll();
+  });
+  $('#cliCancel').addEventListener('click', resetClienteForm);
+  $('#cliBusca').addEventListener('input', renderClientes);
+  $('#cliFiltroCurva').addEventListener('change', renderClientes);
+
+  // Vendas
+  const fv = $('#formVenda');
+  fv.data.value = todayISO();
+  const calcTotal = () => { $('#vendaTotal').textContent = fmtBRL((parseFloat(fv.qtd.value) || 0) * (parseFloat(fv.valorUnit.value) || 0)); };
+  fv.qtd.addEventListener('input', calcTotal); fv.valorUnit.addEventListener('input', calcTotal);
+  fv.produto.addEventListener('change', () => { // sugere último preço praticado do produto
+    if (fv.valorUnit.value) return;
+    const last = db.vendas.filter(v => v.produto === fv.produto.value).sort((a, b) => b.data.localeCompare(a.data))[0];
+    if (last) { fv.valorUnit.value = last.valorUnit; calcTotal(); }
+  });
+  fv.addEventListener('submit', e => {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(fv));
+    const qtd = parseFloat(o.qtd), vu = parseFloat(o.valorUnit);
+    if (!o.clienteId) return toast('Selecione o cliente.', 'error');
+    if (!o.produto.trim()) return toast('Informe o produto.', 'error');
+    if (!(qtd > 0)) return toast('Quantidade deve ser maior que zero.', 'error');
+    if (!(vu >= 0)) return toast('Valor unitário inválido.', 'error');
+    db.vendas.push({ id: uid(), clienteId: o.clienteId, data: o.data, produto: o.produto.trim(), qtd, valorUnit: vu });
+    save();
+    const keepCli = o.clienteId;
+    fv.reset(); fv.data.value = todayISO(); fv.clienteId.value = keepCli; calcTotal();
+    renderAll(); toast(`Venda registrada: ${fmtBRL(qtd * vu)}`);
+  });
+  $('#vendaFiltro').addEventListener('change', renderVendas);
+
+  // Visitas (form inline)
+  const fvi = $('#formVisita');
+  fvi.innerHTML = visitaFields() + `<button type="submit" class="btn-primary w-full">${ic('check', 'w-4 h-4')}Registrar atendimento</button>`;
+  fvi.addEventListener('submit', e => {
+    e.preventDefault();
+    if (saveVisita(fvi)) { const keep = fvi.clienteId.value; fvi.reset(); fvi.clienteId.value = keep; fvi.dataHora.value = nowLocal(); }
+  });
+  $('#visFiltroCli').addEventListener('change', renderVisitas);
+  $('#visFiltroTipo').addEventListener('change', renderVisitas);
+
+  // Backup
+  $('#btnExport').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `crm-sergio-backup-${todayISO()}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('Backup exportado.');
+  });
+  $('#fileImport').addEventListener('change', e => {
+    const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        if (!valid(d)) throw new Error('formato');
+        confirmBox('Importar backup', `O arquivo tem ${d.clientes.length} clientes, ${d.vendas.length} vendas, ${d.visitas.length} atendimentos e ${d.agenda.length} agendamentos. Os dados atuais serão <b>substituídos</b>, inclusive na nuvem.`, 'Importar', () => {
+          db = d; save(); resetClienteForm(); renderAll(); toast('Backup importado.');
+        });
+      } catch (err) { toast('Arquivo inválido. Use um backup exportado por este CRM.', 'error'); }
+    };
+    r.readAsText(file);
+  });
+  $('#btnReset').addEventListener('click', () => confirmBox('Restaurar dados de exemplo', 'Isso apaga <b>todos</b> os dados atuais, <b>inclusive na nuvem</b>, e recarrega os dados fictícios. Exporte um backup antes se precisar.', 'Restaurar', () => {
+    db = seed(); save(); resetClienteForm(); weekStart = mondayOf(new Date()); renderAll(); toast('Dados de exemplo restaurados.');
+  }));
+}
+
+/* ---------- Init ---------- */
+function init() {
+  $$('[data-ic]').forEach(el => { el.innerHTML = ic(el.dataset.ic, el.dataset.icCls || 'w-5 h-5'); if (!el.className) el.className = 'inline-flex'; });
+  $('#logo').innerHTML = ic('leaf', 'w-6 h-6 text-white');
+  const h = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  $('#hoje').textContent = h.charAt(0).toUpperCase() + h.slice(1);
+  bindEvents();
+  // login
+  $('#formLogin').addEventListener('submit', submitLogin);
+  $('#loginToggle').addEventListener('click', () => { setLoginMode(loginMode === 'entrar' ? 'criar' : 'entrar'); $('#loginMsg').innerHTML = ''; });
+  $('#btnLogout').addEventListener('click', () => { $('#userMenu').classList.add('hidden'); logout(); });
+  $('#userBtn').addEventListener('click', e => { e.stopPropagation(); $('#userMenu').classList.toggle('hidden'); });
+  document.addEventListener('click', e => { if (!e.target.closest('#userMenu')) $('#userMenu').classList.add('hidden'); });
+  $('#syncBtn').addEventListener('click', () => { if (syncState === 'auth') showLogin('Entre de novo para voltar a sincronizar.', session?.user?.email); else syncNow(); });
+  // sincronização automática
+  window.addEventListener('online', () => { if (syncState === 'offline') syncState = 'idle'; syncSoon(300); });
+  window.addEventListener('offline', () => { syncState = 'offline'; updateSyncUI(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(300); });
+  setInterval(() => syncNow(), 60000);
+  try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { session = null; }
+  if (session && session.user && session.refresh_token) afterLogin(); else { session = null; showLogin(); }
+}
+init();
+</script>
+</body>
+</html>

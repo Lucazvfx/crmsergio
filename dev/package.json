@@ -1,0 +1,6 @@
+{
+  "name": "crm-sergio-dev",
+  "private": true,
+  "scripts": { "build": "./build.sh" },
+  "devDependencies": { "tailwindcss": "^3.4.0" }
+}
