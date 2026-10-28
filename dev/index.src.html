@@ -91,7 +91,10 @@
           <div><label class="label">CPF / CNPJ</label><input name="doc" class="input" inputmode="numeric" placeholder="000.000.000-00"></div>
           <div><label class="label">Telefone / WhatsApp</label><input name="telefone" class="input" inputmode="tel" placeholder="(69) 99999-0000"></div>
         </div>
-        <div><label class="label">Cidade</label><input name="cidade" class="input" placeholder="Ex.: Vilhena - RO"></div>
+        <div><label class="label">Cidade</label>
+          <select name="cidadeSel" class="input"></select>
+          <input name="cidade" class="input mt-2 hidden" placeholder="Ex.: Comodoro - MT" autocomplete="off">
+        </div>
         <div><label class="label">Perfil Comercial</label>
           <select name="perfil" class="input">
             <option>Pecuária de Corte</option><option>Pecuária de Leite</option><option>Agricultura de Grãos</option>
@@ -127,6 +130,7 @@
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex" data-ic="search" data-ic-cls="w-4 h-4"></span>
             <input id="cliBusca" class="input pl-9" placeholder="Buscar nome, cidade, doc...">
           </div>
+          <select id="cliFiltroCidade" class="input w-auto max-w-[11rem]"></select>
           <select id="cliFiltroCurva" class="input w-auto">
             <option value="">Todas</option><option value="A">Curva A</option><option value="B">Curva B</option><option value="C">Curva C</option>
           </select>
@@ -338,6 +342,34 @@ function maskPhone(v) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 const waLink = tel => { const d = (tel || '').replace(/\D/g, ''); return d.length >= 10 ? `https://wa.me/${d.length <= 11 ? '55' + d : d}` : null; };
+
+/* ---------- Municípios de Rondônia (52) — Cone Sul primeiro ---------- */
+const CONE_SUL = ['Vilhena', 'Cabixi', 'Cerejeiras', 'Chupinguaia', 'Colorado do Oeste', 'Corumbiara', 'Pimenteiras do Oeste'];
+const CIDADES_RO = ["Alta Floresta D'Oeste", 'Alto Alegre dos Parecis', 'Alto Paraíso', "Alvorada D'Oeste", 'Ariquemes', 'Buritis', 'Cabixi', 'Cacaulândia', 'Cacoal',
+  'Campo Novo de Rondônia', 'Candeias do Jamari', 'Castanheiras', 'Cerejeiras', 'Chupinguaia', 'Colorado do Oeste', 'Corumbiara', 'Costa Marques', 'Cujubim',
+  "Espigão D'Oeste", 'Governador Jorge Teixeira', 'Guajará-Mirim', 'Itapuã do Oeste', 'Jaru', 'Ji-Paraná', "Machadinho D'Oeste", 'Ministro Andreazza',
+  'Mirante da Serra', 'Monte Negro', "Nova Brasilândia D'Oeste", 'Nova Mamoré', 'Nova União', 'Novo Horizonte do Oeste', 'Ouro Preto do Oeste', 'Parecis',
+  'Pimenta Bueno', 'Pimenteiras do Oeste', 'Porto Velho', 'Presidente Médici', 'Primavera de Rondônia', 'Rio Crespo', 'Rolim de Moura', "Santa Luzia D'Oeste",
+  "São Felipe D'Oeste", 'São Francisco do Guaporé', 'São Miguel do Guaporé', 'Seringueiras', 'Teixeirópolis', 'Theobroma', 'Urupá', 'Vale do Anari',
+  'Vale do Paraíso', 'Vilhena'];
+const cidadeRO = n => n + ' - RO';
+const OUTRA_CIDADE = '__outra__';
+function fillCidadeSelect(sel) {
+  const opt = n => `<option value="${esc(cidadeRO(n))}">${esc(n)}</option>`;
+  sel.innerHTML = `<option value="">Selecione a cidade...</option>`
+    + `<optgroup label="Cone Sul">${CONE_SUL.map(opt).join('')}</optgroup>`
+    + `<optgroup label="Demais municípios de RO">${CIDADES_RO.filter(c => !CONE_SUL.includes(c)).map(opt).join('')}</optgroup>`
+    + `<option value="${OUTRA_CIDADE}">+ Outra cidade / outro estado (digitar)</option>`;
+}
+// Ajusta lista + campo livre a partir do valor gravado (ex.: "Vilhena - RO" ou "Comodoro - MT")
+function setCidadeForm(f, valor) {
+  const v = (valor || '').trim();
+  const naLista = [...f.cidadeSel.options].some(o => o.value === v && v);
+  f.cidadeSel.value = !v ? '' : naLista ? v : OUTRA_CIDADE;
+  f.cidade.value = naLista ? '' : v;
+  f.cidade.classList.toggle('hidden', f.cidadeSel.value !== OUTRA_CIDADE);
+}
+const lerCidadeForm = f => (f.cidadeSel.value === OUTRA_CIDADE ? f.cidade.value : f.cidadeSel.value).trim().replace(/\s+/g, ' ');
 
 /* ---------- Catálogo de produtos (lista pré-carregada na venda) ---------- */
 const CATALOGO = [
@@ -843,12 +875,21 @@ function renderCards() {
 }
 
 /* ---------- Render: Clientes ---------- */
+function fillCidadeFiltro() {
+  const s = $('#cliFiltroCidade'), v = s.value;
+  const cid = [...new Set(db.clientes.map(c => c.cidade).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  s.innerHTML = `<option value="">Todas as cidades</option>` + cid.map(c => `<option value="${esc(c)}">${esc(c)} (${db.clientes.filter(x => x.cidade === c).length})</option>`).join('');
+  s.value = cid.includes(v) ? v : '';
+}
 function renderClientes() {
+  fillCidadeFiltro();
   const q = $('#cliBusca').value.trim().toLowerCase();
   const fc = $('#cliFiltroCurva').value;
+  const fcid = $('#cliFiltroCidade').value;
   const list = db.clientes
     .filter(c => !q || [c.nome, c.doc, c.cidade, c.perfil, c.telefone].join(' ').toLowerCase().includes(q))
     .filter(c => !fc || curva(c) === fc)
+    .filter(c => !fcid || (c.cidade || '') === fcid)
     .sort((a, b) => (S.totals[b.id] || 0) - (S.totals[a.id] || 0) || a.nome.localeCompare(b.nome));
   $('#cliCount').textContent = `${list.length} de ${db.clientes.length} clientes · ordenados por faturamento`;
   if (!list.length) {
@@ -1171,7 +1212,7 @@ function openFicha(id) {
 
 /* ---------- Clientes: form ---------- */
 function resetClienteForm() {
-  const f = $('#formCliente'); f.reset(); f.id.value = '';
+  const f = $('#formCliente'); f.reset(); f.id.value = ''; setCidadeForm(f, '');
   $('#cliFormTitle').textContent = 'Novo cliente'; $('#cliSubmitLbl').textContent = 'Cadastrar cliente';
   $('#cliCancel').classList.add('hidden');
 }
@@ -1179,7 +1220,8 @@ function editCliente(id) {
   const c = cliById(id); if (!c) return;
   closeModal(); showTab('clientes');
   const f = $('#formCliente');
-  ['id', 'nome', 'doc', 'telefone', 'cidade', 'perfil', 'abcManual', 'obs'].forEach(k => f[k].value = c[k] || '');
+  ['id', 'nome', 'doc', 'telefone', 'perfil', 'abcManual', 'obs'].forEach(k => f[k].value = c[k] || '');
+  setCidadeForm(f, c.cidade);
   $('#cliFormTitle').textContent = 'Editar cliente'; $('#cliSubmitLbl').textContent = 'Salvar alterações';
   $('#cliCancel').classList.remove('hidden');
   $('#boxFormCliente').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1251,6 +1293,11 @@ function bindEvents() {
 
   // Clientes
   const fc = $('#formCliente');
+  fillCidadeSelect(fc.cidadeSel);
+  fc.cidadeSel.addEventListener('change', () => {
+    const outra = fc.cidadeSel.value === OUTRA_CIDADE;
+    fc.cidade.classList.toggle('hidden', !outra); if (outra) { fc.cidade.value = ''; fc.cidade.focus(); }
+  });
   fc.doc.addEventListener('input', e => e.target.value = maskDoc(e.target.value));
   fc.telefone.addEventListener('input', e => e.target.value = maskPhone(e.target.value));
   fc.addEventListener('submit', e => {
@@ -1261,7 +1308,7 @@ function bindEvents() {
     const docDigits = o.doc.replace(/\D/g, '');
     if (docDigits && ![11, 14].includes(docDigits.length)) return toast('CPF deve ter 11 dígitos e CNPJ 14.', 'error');
     if (docDigits && db.clientes.some(c => c.id !== o.id && (c.doc || '').replace(/\D/g, '') === docDigits)) return toast('Já existe um cliente com este CPF/CNPJ.', 'error');
-    const data = { nome: o.nome, doc: o.doc, telefone: o.telefone, cidade: o.cidade.trim(), perfil: o.perfil, abcManual: o.abcManual, obs: o.obs.trim() };
+    const data = { nome: o.nome, doc: o.doc, telefone: o.telefone, cidade: lerCidadeForm(fc), perfil: o.perfil, abcManual: o.abcManual, obs: o.obs.trim() };
     if (o.id) { Object.assign(cliById(o.id), data); toast('Cliente atualizado.'); }
     else { db.clientes.push({ id: uid(), ...data }); toast('Cliente cadastrado.'); }
     save(); resetClienteForm(); renderAll();
@@ -1269,6 +1316,7 @@ function bindEvents() {
   $('#cliCancel').addEventListener('click', resetClienteForm);
   $('#cliBusca').addEventListener('input', renderClientes);
   $('#cliFiltroCurva').addEventListener('change', renderClientes);
+  $('#cliFiltroCidade').addEventListener('change', renderClientes);
 
   // Vendas
   const fv = $('#formVenda');
